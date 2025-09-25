@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Mis tickets — Full Finanzas{% endblock %}
+{% block meta_description %}Consultá el estado de tus tickets de soporte.{% endblock %}
+
+{% block content %}
+<section class="max-w-5xl mx-auto px-4 py-8">
+  <header class="card p-6 mb-6">
+    <h1 class="text-2xl sm:text-3xl font-extrabold">Mis tickets</h1>
+    <p class="text-white/70">Estado y detalle de tus solicitudes.</p>
+  </header>
+
+  <div class="card p-0 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-white/5 text-white/80">
+        <tr>
+          <th class="px-3 py-2 text-left">ID</th>
+          <th class="px-3 py-2 text-left">Asunto</th>
+          <th class="px-3 py-2 text-left">Categoría</th>
+          <th class="px-3 py-2 text-left">Prioridad</th>
+          <th class="px-3 py-2 text-left">Estado</th>
+          <th class="px-3 py-2 text-left">Creado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in page_obj %}
+          <tr class="hover:bg-white/5">
+            <td class="px-3 py-2">#{{ t.id }}</td>
+            <td class="px-3 py-2">{{ t.asunto }}</td>
+            <td class="px-3 py-2 capitalize">{{ t.get_categoria_display }}</td>
+            <td class="px-3 py-2 capitalize">{{ t.get_prioridad_display }}</td>
+            <td class="px-3 py-2">{{ t.estado|title }}</td>
+            <td class="px-3 py-2">{{ t.creado_en|date:"d/m/Y H:i" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="px-3 py-6 text-center text-white/60">No tenés tickets aún.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="mt-4 flex items-center justify-between text-sm">
+    <span class="text-white/60">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

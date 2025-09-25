@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Operar — Exchange{% endblock %}
+{% block meta_description %}Compra y vende USDT/USD con tus saldos disponibles.{% endblock %}
+
+{% block content %}
+<style>.ff-bleed{position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;width:100vw}</style>
+
+<section class="ff-bleed relative text-white overflow-hidden">
+  <!-- Degradé sutil visible (diagonal + radial) -->
+  <div class="pointer-events-none absolute inset-0 opacity-80 mix-blend-screen">
+    <div class="absolute inset-0 bg-gradient-to-br from-[#D2FF00]/10 via-transparent to-[#D2FF00]/5"></div>
+    <div class="absolute -top-20 -right-24 w-[60vw] h-[60vw] bg-[radial-gradient(ellipse_at_center,theme(colors.neon)/.12,transparent_60%)]"></div>
+  </div>
+
+  <div class="relative max-w-7xl mx-auto px-6 py-10">
+    <div class="mb-6">
+      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
+        <span class="text-[#D2FF00]">Operaciones</span>
+      </h1>
+    </div>
+
+    <div class="grid gap-8 lg:grid-cols-12">
+      <!-- Columna izquierda: formularios -->
+      <div class="lg:col-span-8 space-y-6">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <!-- COMPRAR -->
+          <article class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-soft">
+            <h2 class="mb-2 text-lg font-semibold">Comprar</h2>
+            <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='compra'">
+              {% csrf_token %}
+              <input type="hidden" name="operacion" value="compra" />
+              <div>
+                <label class="mb-1 block text-sm text-white/70">Moneda</label>
+                <select id="compra-moneda" name="moneda"
+                        class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]">
+                  <option value="USDT" data-venta="{{ cot_usdt.venta }}">USDT — Venta: ${{ cot_usdt.venta }}</option>
+                  <option value="USD"  data-venta="{{ cot_usd.venta }}">USD — Venta: ${{ cot_usd.venta }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-white/70">Monto en ARS</label>
+                <input id="compra-monto" name="monto" step="0.01" type="number" required
+                       class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]" />
+              </div>
+
+              <!-- Preview COMPRA -->
+              <div class="rounded-xl border border-white/10 bg-[#D2FF00]/5 p-4 text-sm" aria-live="polite">
+                <div class="flex flex-wrap gap-x-6 gap-y-2">
+                  <div>💰 ARS a usar: <b id="compra-ars">—</b></div>
+                  <div>💱 Cotización venta: <b id="compra-rate">—</b></div>
+                  <div class="flex items-center gap-1">
+                    <span>📥 Flujo:</span>
+                    <span>ARS</span>
+                    <span class="text-neon" aria-hidden="true">→</span>
+                    <span><b id="compra-sym">—</b></span>
+                    <span class="ml-2">Recibirás: <b id="compra-recibe">—</b></span>
+                  </div>
+                </div>
+                <p class="mt-2 text-[12px] text-white/60">Valores estimados. La comisión puede estar incluida en la cotización.</p>
+                <p id="compra-warn" class="mt-1 text-[12px] text-red-400 hidden">Saldo ARS insuficiente.</p>
+              </div>
+
+              <button class="w-full rounded-xl bg-[#D2FF00] px-4 py-2 font-semibold text-black hover:opacity-90 transition">Comprar</button>
+            </form>
+          </article>
+
+          <!-- VENDER -->
+          <article class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-soft">
+            <h2 class="mb-2 text-lg font-semibold">Vender</h2>
+            <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='venta'">
+              {% csrf_token %}
+              <input type="hidden" name="operacion" value="venta" />
+              <div>
+                <label class="mb-1 block text-sm text-white/70">Moneda</label>
+                <select id="venta-moneda" name="moneda"
+                        class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]">
+                  <option value="USDT" data-compra="{{ cot_usdt.compra }}">USDT — Compra: ${{ cot_usdt.compra }}</option>
+                  <option value="USD"  data-compra="{{ cot_usd.compra }}">USD — Compra: ${{ cot_usd.compra }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm text-white/70">Monto a vender (USDT/USD)</label>
+                <input id="venta-monto" name="monto" step="0.01" type="number" required
+                       class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]" />
+              </div>
+
+              <!-- Preview VENTA -->
+              <div class="rounded-xl border border-white/10 bg-[#D2FF00]/5 p-4 text-sm" aria-live="polite">
+                <div class="flex flex-wrap gap-x-6 gap-y-2">
+                  <div class="flex items-center gap-1">
+                    <span>📤 Flujo:</span>
+                    <span><b id="venta-cant">—</b> <span id="venta-sym"></span></span>
+                    <span class="text-neon" aria-hidden="true">→</span>
+                    <span>ARS</span>
+                  </div>
+                  <div>💱 Cotización compra: <b id="venta-rate">—</b></div>
+                  <div>💵 Recibirás ARS: <b id="venta-ars">—</b></div>
+                </div>
+                <p class="mt-2 text-[12px] text-white/60">Valores estimados al momento de la orden.</p>
+                <p id="venta-warn" class="mt-1 text-[12px] text-red-400 hidden">Saldo insuficiente para vender.</p>
+              </div>
+
+              <button class="w-full rounded-xl bg-[#D2FF00] px-4 py-2 font-semibold text-black hover:opacity-90 transition">Vender</button>
+            </form>
+          </article>
+
+          <!-- SWAP -->
+          <article class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-soft sm:col-span-2">
+            <h2 class="mb-2 text-lg font-semibold">
+              Swap USD <span class="text-neon">⇄</span> USDT
+            </h2>
+            <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='swap'">
+              {% csrf_token %}
+              <input type="hidden" name="operacion" value="swap" />
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-sm text-white/70">Dirección</label>
+                  <select id="swap-dir" name="swap_direccion" required
+                          class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]">
+                    <option value="USD_to_USDT">USD → USDT</option>
+                    <option value="USDT_to_USD">USDT → USD</option>
+                  </select>
+                  <p class="mt-1 text-xs text-white/50">Tasa base: {{ swap_rate }} • Comisión: {{ swap_fee_bps }} bps</p>
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm text-white/70">Monto (moneda de origen)</label>
+                  <input id="swap-monto" name="monto" step="0.01" type="number" required
+                         class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]" />
+                </div>
+              </div>
+
+              <!-- Preview SWAP -->
+              <div class="rounded-xl border border-white/10 bg-[#D2FF00]/5 p-4 text-sm" aria-live="polite">
+                <div class="flex flex-wrap gap-x-6 gap-y-2">
+                  <div>🔁 Dirección:
+                    <b id="swap-pretty">
+                      USD <span class="text-neon" aria-hidden="true">→</span> USDT
+                    </b>
+                  </div>
+                  <div>📤 Origen: <b id="swap-origen">—</b></div>
+                  <div>📥 Recibirás: <b id="swap-recibe">—</b></div>
+                </div>
+                <p class="mt-2 text-[12px] text-white/60">Importe neto con comisión. Valores estimados.</p>
+                <p id="swap-warn" class="mt-1 text-[12px] text-red-400 hidden">Saldo insuficiente para el swap.</p>
+              </div>
+
+              <button class="w-full rounded-xl bg-[#D2FF00] px-4 py-2 font-semibold text-black hover:opacity-90 transition">Convertir</button>
+            </form>
+          </article>
+        </div>
+      </div>
+
+      <!-- Columna derecha: Ayuda + Saldos apilados -->
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-xl">
+          <h2 class="mb-3 text-lg font-semibold">Ayuda</h2>
+          <p class="text-sm text-white/70">
+            Elegí la moneda y el monto. Para <span class="text-[#D2FF00] font-medium">Comprar</span> ingresás ARS; para
+            <span class="text-[#D2FF00] font-medium">Vender</span> ingresás la cantidad de USDT/USD. Confirmá el resumen antes de enviar.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-4 shadow-xl">
+          <p class="text-white/60">Saldo ARS</p><p class="mt-1 text-xl font-semibold">${{ request.user.saldo_ars }}</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-4 shadow-xl">
+          <p class="text-white/60">Saldo USDT</p><p class="mt-1 text-xl font-semibold">{{ request.user.saldo_usdt }}</p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-4 shadow-xl">
+          <p class="text-white/60">Saldo USD</p><p class="mt-1 text-xl font-semibold">{{ request.user.saldo_usd|default:"0.00" }}</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  // Helpers
+  const fmt = v => Number(v || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtARS = v => fmt(v);
+  const getSel = (f,n) => f.querySelector('[name="'+n+'"]');
+  const selectedOpt = s => s && s.selectedOptions ? s.selectedOptions[0] : null;
+
+  // Saldos del usuario (inyectados)
+  const SALDO_ARS  = Number('{{ request.user.saldo_ars|default:"0" }}');
+  const SALDO_USDT = Number('{{ request.user.saldo_usdt|default:"0" }}');
+  const SALDO_USD  = Number('{{ request.user.saldo_usd|default:"0" }}');
+
+  // Parámetros de swap
+  const SWAP_RATE = Number('{{ swap_rate|default:"1.00" }}');
+  const SWAP_FEE_BPS = Number('{{ swap_fee_bps|default:"100" }}');
+  const FEE = 1 - (SWAP_FEE_BPS / 10000);
+
+  // ---------- Preview COMPRA ----------
+  (function () {
+    const sel = document.getElementById('compra-moneda');
+    const inp = document.getElementById('compra-monto');
+    const outARS = document.getElementById('compra-ars');
+    const outRate = document.getElementById('compra-rate');
+    const outRecv = document.getElementById('compra-recibe');
+    const outSym  = document.getElementById('compra-sym');
+    const warn = document.getElementById('compra-warn');
+
+    function update() {
+      const opt = selectedOpt(sel);
+      const sym = sel.value;
+      const rate = Number(opt?.dataset?.venta || 0);
+      const ars = Number(inp.value || 0);
+      let recv = 0;
+      if (rate > 0 && ars > 0) recv = ars / rate;
+
+      outARS.textContent = '$' + fmtARS(ars);
+      outRate.textContent = '$' + fmt(rate);
+      outRecv.textContent = fmt(recv);
+      outSym.textContent = sym;
+
+      const insuf = ars > SALDO_ARS;
+      warn.classList.toggle('hidden', !insuf);
+    }
+    sel.addEventListener('change', update);
+    inp.addEventListener('input', update);
+    update();
+  })();
+
+  // ---------- Preview VENTA ----------
+  (function () {
+    const sel = document.getElementById('venta-moneda');
+    const inp = document.getElementById('venta-monto');
+    const outCant = document.getElementById('venta-cant');
+    const outSym  = document.getElementById('venta-sym');
+    const outRate = document.getElementById('venta-rate');
+    const outARS  = document.getElementById('venta-ars');
+    const warn = document.getElementById('venta-warn');
+
+    function update() {
+      const opt = selectedOpt(sel);
+      const sym = sel.value;
+      const rate = Number(opt?.dataset?.compra || 0);
+      const qty  = Number(inp.value || 0);
+      let ars = 0;
+      if (rate > 0 && qty > 0) ars = qty * rate;
+
+      outCant.textContent = fmt(qty);
+      outSym.textContent  = sym;
+      outRate.textContent = '$' + fmt(rate);
+      outARS.textContent  = '$' + fmtARS(ars);
+
+      const saldoOrigen = sym === 'USDT' ? SALDO_USDT : SALDO_USD;
+      warn.classList.toggle('hidden', !(qty > saldoOrigen));
+    }
+    sel.addEventListener('change', update);
+    inp.addEventListener('input', update);
+    update();
+  })();
+
+  // ---------- Preview SWAP ----------
+  (function () {
+    const dirSel = document.getElementById('swap-dir');
+    const inp = document.getElementById('swap-monto');
+    const outPretty = document.getElementById('swap-pretty');
+    const outOrigen = document.getElementById('swap-origen');
+    const outRecibe = document.getElementById('swap-recibe');
+    const warn = document.getElementById('swap-warn');
+
+    function update() {
+      const dir = dirSel.value;
+      const from = (dir === 'USD_to_USDT') ? 'USD' : 'USDT';
+      const to   = (dir === 'USD_to_USDT') ? 'USDT' : 'USD';
+      const monto = Number(inp.value || 0);
+      let recibe = 0;
+
+      if (monto > 0) {
+        recibe = dir === 'USD_to_USDT'
+          ? (monto * SWAP_RATE * FEE)
+          : ((monto / SWAP_RATE) * FEE);
+      }
+
+      // Flecha neon en la dirección:
+      outPretty.innerHTML = `${from} <span class="text-neon" aria-hidden="true">→</span> ${to}`;
+      outOrigen.textContent = fmt(monto) + ' ' + from;
+      outRecibe.textContent = fmt(recibe) + ' ' + to;
+
+      const saldoOrigen = (from === 'USD') ? SALDO_USD : SALDO_USDT;
+      warn.classList.toggle('hidden', !(monto > saldoOrigen));
+    }
+    dirSel.addEventListener('change', update);
+    inp.addEventListener('input', update);
+    update();
+  })();
+
+  // --------- Confirm dialogs existentes (sin cambios) ---------
+  document.querySelectorAll('form.op-confirm').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      function fmt2(v){return Number(v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+      const getSel = (f,n)=>f.querySelector('[name="'+n+'"]');
+      const selectedOpt = s => s && s.selectedOptions ? s.selectedOptions[0] : null;
+
+      const op=(form.querySelector('[name=operacion]')?.value||'').toLowerCase();
+      const monto=Number(getSel(form,'monto')?.value||0);
+      if (monto<=0 || Number.isNaN(monto)) { e.preventDefault(); alert('Ingresá un monto válido.'); return; }
+
+      let msg='¿Confirmar operación?', detalle='', recibeLinea='';
+
+      if (op==='compra'){
+        const sel=getSel(form,'moneda'); const moneda=sel?.value||''; const opt=selectedOpt(sel);
+        const pVenta=Number(opt?.dataset?.venta||0); if(!pVenta){e.preventDefault();alert('No se encontró la cotización de venta.');return;}
+        const recibe=monto/pVenta;
+        detalle=`Cotización de venta ${moneda}: $${fmt2(pVenta)} (por 1 ${moneda})`;
+        recibeLinea=`Recibirás: ${fmt2(recibe)} ${moneda}`;
+        msg=`Vas a COMPRAR ${moneda} usando $${fmt2(monto)} ARS.\n${detalle}\n${recibeLinea}\n\n¿Confirmás?`;
+      } else if (op==='venta'){
+        const sel=getSel(form,'moneda'); const moneda=sel?.value||''; const opt=selectedOpt(sel);
+        const pCompra=Number(opt?.dataset?.compra||0); if(!pCompra){e.preventDefault();alert('No se encontró la cotización de compra.');return;}
+        const recibeARS=monto*pCompra;
+        detalle=`Cotización de compra ${moneda}: $${fmt2(pCompra)} (por 1 ${moneda})`;
+        recibeLinea=`Recibirás: $${fmt2(recibeARS)} ARS`;
+        msg=`Vas a VENDER ${fmt2(monto)} ${moneda}.\n${detalle}\n${recibeLinea}\n\n¿Confirmás?`;
+      } else if (op==='swap'){
+        const dir=getSel(form,'swap_direccion')?.value||''; const pretty=dir==='USD_to_USDT'?'USD → USDT':'USDT → USD';
+        const fee=1-(Number('{{ swap_fee_bps|default:"100" }}')/10000);
+        let recibe=0;
+        if(dir==='USD_to_USDT'){recibe=monto*Number('{{ swap_rate|default:"1" }}')*fee}
+        else if(dir==='USDT_to_USD'){recibe=(monto/Number('{{ swap_rate|default:"1" }}'))*fee}
+        else {e.preventDefault();alert('Dirección de swap inválida.');return;}
+        detalle=`Tasa base: {{ swap_rate }} | Comisión: {{ swap_fee_bps }} bps`;
+        recibeLinea=`Recibirás: ${fmt2(recibe)} ${dir==='USD_to_USDT'?'USDT':'USD'} (neto)`;
+        msg=`Vas a hacer SWAP ${pretty} por ${fmt2(monto)} (moneda de origen).\n${detalle}\n${recibeLinea}\n\n¿Confirmás?`;
+      }
+
+      if (!confirm(msg)) { e.preventDefault(); return; }
+      const btn=form.querySelector('button[type=submit],button:not([type])'); if(btn){btn.disabled=true;btn.textContent='Procesando...'}
+    }, false);
+  });
+})();
+</script>
+{% endblock %}

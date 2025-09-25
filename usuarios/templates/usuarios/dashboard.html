@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Exchange{% endblock %}
+{% block meta_description %}Resumen de tu cartera, saldos y actividad reciente.{% endblock %}
+
+{% block content %}
+<div class="relative">
+  <!-- 👋 Bienvenida -->
+  <h2 class="text-2xl font-semibold mb-6">
+    Bienvenido, <span class="text-neon">{{ request.user.username }}</span>
+  </h2>
+
+  <!-- 📌 Saldos -->
+  <div class="grid gap-4 sm:grid-cols-3 mb-8">
+    <div class="card p-5 shadow-soft">
+      <p class="text-sm text-white/60">Saldo ARS</p>
+      <p class="mt-1 text-2xl font-bold">${{ request.user.saldo_ars }}</p>
+    </div>
+    <div class="card p-5 shadow-soft">
+      <p class="text-sm text-white/60">Saldo USDT</p>
+      <p class="mt-1 text-2xl font-bold">{{ request.user.saldo_usdt }}</p>
+    </div>
+    <div class="card p-5 shadow-soft">
+      <p class="text-sm text-white/60">Saldo USD</p>
+      <p class="mt-1 text-2xl font-bold">{{ request.user.saldo_usd|default:"0.00" }}</p>
+    </div>
+  </div>
+
+  <!-- ⚡ Acciones rápidas (estilo de la imagen) -->
+  <section class="mb-8">
+    <h3 class="text-lg font-semibold mb-4">Acciones rápidas</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+     
+      <a href="{% url 'operar' %}"
+         class="group card p-5 hover:bg-white/[0.06] transition shadow-soft">
+        <div class="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 mb-3">
+          <!-- arrow up -->
+          <svg class="h-5 w-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+          </svg>
+        </div>
+        <div class="font-semibold">Operar</div>
+        <p class="text-sm text-white/60">Comprá, vendé y converti tus saldos.</p>
+      </a>
+
+      
+      <a href="{% url 'operar' %}"
+         class="group card p-5 hover:bg-white/[0.06] transition shadow-soft">
+        <div class="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 mb-3">
+          <!-- arrow down -->
+          <svg class="h-5 w-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+          </svg>
+        </div>
+        <div class="font-semibold">Ingresa Dinero</div>
+        <p class="text-sm text-white/60">Ingresa saldo para empezar a operar</p>
+      </a>
+
+      <a href="{% url 'operar' %}"
+         class="group card p-5 hover:bg-white/[0.06] transition shadow-soft">
+        <div class="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 mb-3">
+          
+          <svg class="h-5 w-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+          </svg>
+        </div>
+        <div class="font-semibold">Solicita un retiro</div>
+        <p class="text-sm text-white/60">Solicita un retiro de tus fondos</p>
+      </a>
+
+      
+      
+    </div>
+
+    <!-- accesos secundarios (lo que ya tenías) -->
+    <div class="mt-4 flex flex-wrap gap-3 text-sm">
+      <a href="{% url 'exportar_movimientos_usuario' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">📥 Exportar movimientos</a>
+      <a href="{% url 'comprobantes' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">🧾 Comprobantes</a>
+      <a href="{% url 'logout' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">🚪 Cerrar sesión</a>
+    </div>
+  </section>
+
+
+
+  <!-- 📜 Historial de movimientos -->
+  <div>
+    <h3 class="text-lg font-semibold mb-4">Ultimos movimientos</h3>
+    <div class="overflow-x-auto card p-0">
+      <table class="w-full border-collapse text-sm">
+        <thead class="bg-white/5 text-white/80">
+          <tr>
+            <th class="px-3 py-2 text-left">Fecha</th>
+            <th class="px-3 py-2 text-left">Tipo</th>
+            <th class="px-3 py-2 text-left">Moneda</th>
+            <th class="px-3 py-2 text-left">Monto</th>
+            <th class="px-3 py-2 text-left">Saldo antes</th>
+            <th class="px-3 py-2 text-left">Saldo después</th>
+            <th class="px-3 py-2 text-left">Descripción</th>
+            <th class="px-3 py-2 text-left">ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in movimientos %}
+            <tr class="hover:bg-white/5">
+              <td class="px-3 py-2">{{ m.fecha }}</td>
+              <td class="px-3 py-2">{{ m.get_tipo_display }}</td>
+              <td class="px-3 py-2">{{ m.moneda }}</td>
+              <td class="px-3 py-2">${{ m.monto }}</td>
+              <td class="px-3 py-2">${{ m.saldo_antes }}</td>
+              <td class="px-3 py-2">${{ m.saldo_despues }}</td>
+              <td class="px-3 py-2">{{ m.descripcion }}</td>
+              <td class="px-3 py-2">{{ m.codigo }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="px-3 py-4 text-center text-white/60">Sin movimientos aún.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

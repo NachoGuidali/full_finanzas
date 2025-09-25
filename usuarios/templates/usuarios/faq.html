@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Preguntas Frecuentes — Full Finanzas{% endblock %}
+{% block meta_description %}Respuestas rápidas sobre operaciones, comisiones y cuenta.{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-4 py-8">
+  <header class="card p-6 mb-6">
+    <h1 class="text-2xl sm:text-3xl font-extrabold">Preguntas Frecuentes</h1>
+    <p class="text-white/70">Encontrá respuestas inmediatas. Si aún tenés dudas, <a class="text-neon underline" href="{% url 'soporte' %}">abrí un ticket</a>.</p>
+  </header>
+
+  <!-- Buscador -->
+  <div class="card p-4 mb-6">
+    <input id="faqSearch" type="search" placeholder="Buscar: USDT, comisiones, KYC…"
+           class="w-full rounded-md border border-white/10 bg-white/90 text-black px-3 py-2">
+  </div>
+
+  <!-- Acordeón -->
+  <div id="faqList" class="space-y-3">
+    {% for item in faqs %}
+      <details class="group card p-4">
+        <summary class="list-none flex items-center justify-between cursor-pointer">
+          <span class="font-medium">{{ item.q }}</span>
+          <span class="ml-3 h-6 w-6 grid place-content-center rounded-full bg-white/10 text-neon transition group-open:rotate-45">+</span>
+        </summary>
+        <div class="mt-3 text-white/80">{{ item.a }}</div>
+      </details>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+(function(){
+  const input = document.getElementById('faqSearch');
+  const items = Array.from(document.querySelectorAll('#faqList details'));
+  input?.addEventListener('input', () => {
+    const q = (input.value||'').toLowerCase();
+    items.forEach(d => {
+      const text = d.textContent.toLowerCase();
+      d.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+})();
+</script>
+{% endblock %}

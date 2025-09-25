@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Soporte — Full Finanzas{% endblock %}
+{% block meta_description %}Abrí un ticket de soporte para que el equipo te ayude rápido.{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-8">
+  <header class="card p-6 mb-6">
+    <h1 class="text-2xl sm:text-3xl font-extrabold">Soporte</h1>
+    <p class="text-white/70">Contanos qué necesitás. Respondemos por email a la brevedad.</p>
+    <div class="flex justify-end pt-2">
+        <a href="{% url 'mis_tickets' %}"><button class="rounded-xl bg-neon text-black font-semibold px-5 py-3 text-sm hover:opacity-90">
+          ver tickets
+        </button></a>
+        
+      </div>
+  </header>
+
+  {% if messages %}
+    <div class="space-y-2 mb-4">
+      {% for m in messages %}
+        <div class="card p-3 {% if m.tags == 'success' %}border border-emerald-500/40 bg-emerald-500/10{% else %}border border-rose-500/40 bg-rose-500/10{% endif %}">
+          {{ m }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card p-6">
+    <form method="post" enctype="multipart/form-data" class="grid gap-4">
+      {% csrf_token %}
+      <div>
+        <label class="text-xs text-white/60 block mb-1">Email</label>
+        {{ form.email }}
+        {% for e in form.email.errors %}<p class="text-rose-400 text-xs mt-1">{{ e }}</p>{% endfor %}
+      </div>
+
+      <div>
+        <label class="text-xs text-white/60 block mb-1">Asunto</label>
+        {{ form.asunto }}
+        {% for e in form.asunto.errors %}<p class="text-rose-400 text-xs mt-1">{{ e }}</p>{% endfor %}
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-white/60 block mb-1">Categoría</label>
+          {{ form.categoria }}
+          {% for e in form.categoria.errors %}<p class="text-rose-400 text-xs mt-1">{{ e }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="text-xs text-white/60 block mb-1">Prioridad</label>
+          {{ form.prioridad }}
+          {% for e in form.prioridad.errors %}<p class="text-rose-400 text-xs mt-1">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs text-white/60 block mb-1">Mensaje</label>
+        {{ form.mensaje }}
+        <div class="flex justify-end text-[11px] text-white/60 mt-1"><span id="msgCount">0</span>/2000</div>
+        {% for e in form.mensaje.errors %}<p class="text-rose-400 text-xs mt-1">{{ e }}</p>{% endfor %}
+      </div>
+
+      <div>
+        <label class="text-xs text-white/60 block mb-1">Adjunto (opcional)</label>
+        {{ form.adjunto }}
+        {% for e in form.adjunto.errors %}<p class="text-rose-400 text-xs mt-1">{{ e }}</p>{% endfor %}
+        <p class="text-white/50 text-[12px] mt-1">PDF, JPG o PNG. Máx. 10 MB.</p>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button class="rounded-xl bg-neon text-black font-semibold px-5 py-3 text-sm hover:opacity-90">
+          Enviar ticket
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+(function(){
+  const ta = document.getElementById("id_mensaje");
+  const out = document.getElementById("msgCount");
+  if(ta && out){
+    const max = 2000;
+    ta.setAttribute('maxlength', max);
+    const upd = ()=> out.textContent = (ta.value||'').length;
+    ta.addEventListener('input', upd); upd();
+  }
+})();
+</script>
+{% endblock %}

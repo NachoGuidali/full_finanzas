@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Verificación de comprobante</h2>
+<p><b>Número:</b> {{ numero }}</p>
+<p><b>Fecha:</b> {{ fecha|date:"d/m/Y H:i:s" }}</p>
+<p><b>Usuario:</b> {{ usuario }}</p>
+<p><b>Tipo:</b> {{ tipo }}</p>
+<p><b>SHA-256 (PDF):</b> <code>{{ pdf_sha256 }}</code></p>
+{% if anulado %}<p><strong>Estado:</strong> ANULADO</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Solicitar retiro — Full Finanzas{% endblock %}
+{% block meta_description %}Retirá tus fondos a banco (ARS) o cripto wallet.{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <header class="card p-6 mb-6">
+    <h1 class="text-2xl sm:text-3xl font-extrabold">Solicitar retiro</h1>
+    <p class="text-white/70 mt-1">Elegí el método de retiro y completá los datos requeridos.</p>
+  </header>
+
+  <!-- Mensajes de estado -->
+  {% if error %}
+    <div class="card p-4 mb-4 border border-rose-500/40 bg-rose-500/10 text-sm">{{ error }}</div>
+  {% endif %}
+  {% if success %}
+    <div class="card p-4 mb-4 border border-emerald-500/40 bg-emerald-500/10 text-sm">{{ success }}</div>
+  {% endif %}
+
+  <div class="grid lg:grid-cols-2 gap-6">
+    <!-- Retiro ARS a banco -->
+    <div class="card p-6">
+      <h2 class="text-lg font-semibold mb-4">Retiro a banco (ARS)</h2>
+      <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        <label class="block">
+          <span class="text-xs text-white/60 mb-1 block">Monto a retirar (ARS)</span>
+          <input type="number" step="0.01" name="monto" required
+                 class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+        </label>
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="block sm:col-span-1">
+            <span class="text-xs text-white/60 mb-1 block">Alias</span>
+            <input type="text" name="alias"
+                   class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+          </label>
+          <label class="block sm:col-span-1">
+            <span class="text-xs text-white/60 mb-1 block">CBU</span>
+            <input type="text" name="cbu"
+                   class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+          </label>
+          <label class="block sm:col-span-1">
+            <span class="text-xs text-white/60 mb-1 block">Banco</span>
+            <input type="text" name="banco"
+                   class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+          </label>
+        </div>
+
+        <!-- Nota / ayuda -->
+        <div class="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+          ⓘ Acreditación estimada dentro de 24–48 h hábiles. Puede requerir verificación adicional.
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button type="submit" class="rounded-xl bg-neon text-black font-semibold px-5 py-2 text-sm hover:opacity-90">
+            Solicitar retiro
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Retiro cripto -->
+    <div class="card p-6">
+      <h2 class="text-lg font-semibold mb-4">Retiro cripto (USD/USDT)</h2>
+      <form method="POST" action="{% url 'solicitar_retiro_cripto' %}" class="space-y-4">
+        {% csrf_token %}
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="block sm:col-span-1">
+            <span class="text-xs text-white/60 mb-1 block">Moneda</span>
+            <select name="moneda"
+                    class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+              <option value="USDT">USDT</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <label class="block sm:col-span-2">
+            <span class="text-xs text-white/60 mb-1 block">Monto</span>
+            <input type="number" step="0.01" name="monto" required
+                   class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-xs text-white/60 mb-1 block">Dirección de wallet</span>
+          <input type="text" name="direccion_wallet" required
+                 class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+        </label>
+
+        <!-- Nota / ayuda -->
+        <div class="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+          ⚠️ Verificá red y dirección. Las transferencias en blockchain son irreversibles.
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button type="submit" class="rounded-xl bg-neon text-black font-semibold px-5 py-2 text-sm hover:opacity-90">
+            Solicitar retiro
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

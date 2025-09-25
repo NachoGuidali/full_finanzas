@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ingresar — Full Finanzas</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            neon: '#D2FF00',
+            ink: { 900: '#010318', 800:'#0b0f2a' }
+          },
+          boxShadow: {
+            soft: '0 10px 30px -10px rgba(210,255,0,0.25)'
+          },
+          keyframes: {
+            float: { '0%,100%':{transform:'translateY(0)'}, '50%':{transform:'translateY(-10px)'} },
+            slowSpin: { from:{transform:'rotate(0deg)'}, to:{transform:'rotate(360deg)'} }
+          },
+          animation: {
+            float: 'float 8s ease-in-out infinite',
+            slowSpin: 'slowSpin 40s linear infinite'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root{ --bg:#010318; --card:#0b0f2a; }
+    html{ font-family: Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; }
+    .card{ background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:1rem; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-[var(--bg)] text-white">
+  <!-- Fondo neon global sutil -->
+  <div class="pointer-events-none fixed inset-0 -z-10">
+    <div class="absolute inset-0 bg-gradient-to-br from-[rgba(210,255,0,0.06)] via-transparent to-[rgba(210,255,0,0.03)]"></div>
+    <div class="absolute -top-28 right-[10%] h-[26rem] w-[26rem] rounded-full blur-3xl"
+         style="background:radial-gradient(50% 50% at 50% 50%, rgba(210,255,0,0.14) 0%, rgba(210,255,0,0) 60%);"></div>
+  </div>
+
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 min-h-screen grid lg:grid-cols-12 gap-8 items-center">
+    <!-- Panel ilustración (izquierda) -->
+    <div class="relative hidden lg:block lg:col-span-7">
+      <!-- arte geométrico animado -->
+      <div class="relative h-[72vh] rounded-3xl bg-ink-800/40 border border-white/10 overflow-hidden">
+        <!-- disco -->
+        <div class="absolute -right-24 -top-16 h-[36rem] w-[36rem] rounded-full border-2 border-neon/40 animate-slowSpin"></div>
+        <!-- semicírculo lleno -->
+        <div class="absolute right-10 top-24 h-64 w-64 rounded-b-full bg-neon/70"></div>
+        <!-- arcos -->
+        <div class="absolute left-14 top-24 h-80 w-80 rounded-full border border-neon/30"></div>
+        <div class="absolute left-14 top-24 h-80 w-80 rounded-[9999px] border-t border-neon/40"></div>
+        <!-- partículas -->
+        <span class="absolute left-10 bottom-16 h-4 w-4 rounded-full bg-neon/80 animate-float"></span>
+        <span class="absolute left-24 bottom-28 h-3 w-3 rounded-full bg-neon/60 animate-float" style="animation-delay:.6s"></span>
+        <!-- marca -->
+        <div class="absolute top-8 left-8 flex items-center gap-3">
+          <img class="h-16" src="{% static 'img/logo_horizontal.png' %}" alt="">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta login (derecha) -->
+    <section class="lg:col-span-5">
+      <div class="card p-6 sm:p-8 shadow-soft">
+        <header class="mb-6">
+          <h1 class="text-2xl font-semibold">Te damos la bienvenida</h1>
+          <p class="text-white/60 text-sm mt-1">Ingresá con tu email y contraseña.</p>
+        </header>
+
+        <!-- mensajes de Django -->
+        {% if messages %}
+          <div class="mb-4 space-y-2">
+            {% for message in messages %}
+              <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- errores no de campo -->
+        {% if form.non_field_errors %}
+          <div class="mb-4 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}?next={% url 'dashboard' %}" class="space-y-4" novalidate>
+          {% csrf_token %}
+
+          <!-- Email/username -->
+          <label class="block">
+            <span class="text-xs text-white/70">Email</span>
+            <input
+              type="text" name="username" autocomplete="username" required
+              value="{{ form.username.value|default:'' }}"
+              class="mt-1 w-full rounded-xl border border-white/10 bg-ink-800 px-3 py-2 outline-none focus:ring-2 focus:ring-neon" />
+            {% if form.username.errors %}
+              <span class="mt-1 block text-xs text-red-300">{{ form.username.errors.0 }}</span>
+            {% endif %}
+          </label>
+
+          <!-- Password + toggle -->
+          <label class="block">
+            <span class="text-xs text-white/70">Clave</span>
+            <div class="relative mt-1">
+              <input
+                id="pw" type="password" name="password" autocomplete="current-password" required
+                class="w-full rounded-xl border border-white/10 bg-ink-800 px-3 py-2 pr-10 outline-none focus:ring-2 focus:ring-neon" />
+              <button type="button" id="togglePw"
+                class="absolute inset-y-0 right-0 px-3 text-white/70 hover:text-white"
+                aria-label="Mostrar u ocultar contraseña">👁️</button>
+            </div>
+            {% if form.password.errors %}
+              <span class="mt-1 block text-xs text-red-300">{{ form.password.errors.0 }}</span>
+            {% endif %}
+          </label>
+
+          <div class="flex items-center justify-between text-sm">
+            <a href="#" class="text-neon hover:opacity-90">¿Olvidaste tu clave?</a>
+          </div>
+
+          <button
+            class="mt-2 w-full rounded-xl bg-neon text-black font-semibold py-2.5 hover:opacity-90 transition">
+            Ingresar
+          </button>
+        </form>
+
+        <div class="mt-6 border-t border-white/10 pt-4 text-sm text-white/70">
+          ¿Sos nueva/o en Full Finanzas?
+          <a href="{% url 'registro' %}" class="text-neon hover:opacity-90 font-medium">Crear cuenta</a>
+        </div>
+
+        <!-- (opcional) pie legal / captcha -->
+        <p class="mt-3 text-[11px] text-white/50">
+          Este sitio puede estar protegido por reCAPTCHA; aplican la
+          <a href="#" class="underline">política de privacidad</a> y los
+          <a href="#" class="underline">términos de servicio</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Toggle password
+    const btn = document.getElementById('togglePw');
+    const pw  = document.getElementById('pw');
+    btn?.addEventListener('click', () => {
+      const is = pw.type === 'password';
+      pw.type = is ? 'text' : 'password';
+      btn.textContent = is ? '🙈' : '👁️';
+    });
+  </script>
+</body>
+</html>

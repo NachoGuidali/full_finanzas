@@ -1,0 +1,206 @@
+{% load static %}
+<!-- Backdrop mobile -->
+<div id="drawerBackdrop" class="fixed inset-0 z-40 hidden bg-black/50 md:hidden"></div>
+
+<!-- Drawer / Sidebar -->
+<aside id="drawerSidebar" class="fixed md:sticky md:top-0 z-50 md:z-10 h-screen w-72 -translate-x-full md:translate-x-0 transition-transform
+              bg-[var(--card)] border-r border-white/10 flex-shrink-0">
+  <!-- Header brand -->
+  <div class="h-14 px-4 flex items-center justify-between border-b border-white/10">
+    <a href="{% url 'home' %}" class="flex items-center gap-2">
+      <img class="h-16" src="{% static 'img/logo_horizontal.png' %}" alt="">
+    </a>
+    <button id="closeSidebar" class="md:hidden p-2 rounded-lg hover:bg-white/5" aria-label="Cerrar menú">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Navegación -->
+  <nav class="px-3 py-4 space-y-1 text-[15px]">
+    <a href="{% url 'dashboard' %}"
+      class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'dashboard' %}bg-white/10{% endif %}">
+      <span class="inline-block h-5 w-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
+        </svg>
+      </span>
+      Inicio
+    </a>
+
+    <a href="{% url 'operar' %}"
+      class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'operar' %}bg-white/10{% endif %}">
+      <span class="inline-block h-5 w-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v6H4zM4 14h16v6H4z" />
+        </svg>
+      </span>
+      Exchange
+    </a>
+
+    <a href="{% url 'mis_movimientos' %}"
+      class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'mis_movimientos' %}bg-white/10{% endif %}">
+      <span class="inline-block h-5 w-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8c-3.866 0-7 1.79-7 4s3.134 4 7 4 7-1.79 7-4-3.134-4-7-4z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8V4m0 16v-4" />
+        </svg>
+      </span>
+      Movimientos
+    </a>
+
+    <a href="{% url 'comprobantes' %}"
+      class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'comprobantes' %}bg-white/10{% endif %}">
+      <span class="inline-block h-5 w-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
+        </svg>
+      </span>
+      Comprobantes
+    </a>
+
+    <a href="{% url 'agregar_saldo' %}"
+      class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'agregar_saldo' %}bg-white/10{% endif %}">
+      <span class="inline-block h-5 w-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 21V3M19 15l-6 6-6-6" />
+        </svg>
+      </span>
+      Ingresar dinero
+    </a>
+
+    <a href="{% url 'solicitar_retiro' %}"
+      class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'solicitar_retiro' %}bg-white/10{% endif %}">
+      <span class="inline-block h-5 w-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18M5 9l6-6 6 6" />
+        </svg>
+      </span>
+      Solicitar un retiro
+    </a>
+
+    {# ===================== ADMIN SECTION ===================== #}
+    {% if request.user.is_staff or request.user.is_superuser %}
+      <div class="pt-4 mt-4 border-t border-white/10">
+        <div class="px-3 pb-2 text-[11px] uppercase tracking-wider text-white/50">Administración</div>
+
+        <a href="{% url 'panel_admin' %}"
+           class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5
+                  {% if request.resolver_match.url_name == 'panel_admin' %}bg-white/10{% endif %}">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+          Panel admin
+        </a>
+
+        <a href="{% url 'panel_depositos' %}"
+           class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5
+                  {% if request.resolver_match.url_name == 'panel_depositos' %}bg-white/10{% endif %}">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v8m-4-4h8M4 6h16v12H4z"/>
+          </svg>
+          Depósitos ARS
+          {% if kpi_depositos_pend %}<span class="ml-auto rounded-full bg-neon/20 text-neon px-2 py-[2px] text-[11px]">{{ kpi_depositos_pend }}</span>{% endif %}
+        </a>
+
+        <a href="{% url 'panel_depositos_usdt' %}"
+           class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5
+                  {% if request.resolver_match.url_name == 'panel_depositos_usdt' %}bg-white/10{% endif %}">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16v12H4zM8 10h8M8 14h5"/>
+          </svg>
+          Depósitos USDT
+        </a>
+
+        <a href="{% url 'panel_retiros' %}"
+           class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5
+                  {% if request.resolver_match.url_name == 'panel_retiros' %}bg-white/10{% endif %}">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3v18M5 10l7-7 7 7"/>
+          </svg>
+          Retiros
+          {% if kpi_retiros_ars_pend or kpi_retiros_crypto_pend %}
+            <span class="ml-auto rounded-full bg-neon/20 text-neon px-2 py-[2px] text-[11px]">
+              {{ kpi_retiros_ars_pend|default:0|add:kpi_retiros_crypto_pend|default:0 }}
+            </span>
+          {% endif %}
+        </a>
+
+        <a href="{% url 'panel_admin' %}#movs"
+           class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 3v18h18M7 13l3 3 7-7"/>
+          </svg>
+          Movimientos
+        </a>
+
+        <!-- <a href="{% url 'panel_admin' %}#export"
+           class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M7 10l5 5 5-5M12 15V3m8 14v4H4v-4"/>
+          </svg>
+          Exportar
+        </a> -->
+      </div>
+    {% endif %}
+    {# =================== /ADMIN SECTION ==================== #}
+  </nav>
+
+  <!-- Footer del sidebar -->
+  <div class="mt-auto px-3 py-4 border-t border-white/10 space-y-2">
+    <a href="{% url 'soporte' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7" />
+      </svg>
+      Escribir a soporte
+    </a>
+
+    <a href="{% url 'configuracion' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M11 3h2M4.22 4.22l1.42 1.42M3 11h2m14 0h2M4.22 19.78l1.42-1.42M11 21h2M18.36 5.64l1.42-1.42M12 8a4 4 0 100 8 4 4 0 000-8z" />
+      </svg>
+      Ajustes
+    </a>
+
+    {# 💹 Cotizaciones #}
+    <div class="card p-3 mt-2">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-semibold">Cotizaciones</h4>
+        <div class="text-[11px] text-white/50">ARS</div>
+      </div>
+      <table class="w-full text-xs">
+        <tr>
+          <td class="py-1 font-semibold">USDT</td>
+          <td class="py-1 text-white/60">Compra</td>
+          <td class="py-1 text-right">${{ cot_usdt.compra }}</td>
+        </tr>
+        <tr class="border-t border-white/5">
+          <td class="py-1"></td>
+          <td class="py-1 text-white/60">Venta</td>
+          <td class="py-1 text-right">${{ cot_usdt.venta }}</td>
+        </tr>
+        <tr class="border-t border-white/5">
+          <td class="py-1 font-semibold">USD</td>
+          <td class="py-1 text-white/60">Compra</td>
+          <td class="py-1 text-right">${{ cot_usd.compra }}</td>
+        </tr>
+        <tr class="border-t border-white/5">
+          <td class="py-1"></td>
+          <td class="py-1 text-white/60">Venta</td>
+          <td class="py-1 text-right">${{ cot_usd.venta }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</aside>

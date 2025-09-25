@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Depósitos USDT — Admin{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 py-8">
+  <header class="mb-6 flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold">Depósitos USDT</h1>
+      <p class="text-white/70">Verificación manual por red y TXID.</p>
+    </div>
+    <a href="{% url 'panel_admin' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">← Volver al panel</a>
+  </header>
+
+  <div class="overflow-x-auto card p-0">
+    <table class="w-full text-sm">
+      <thead class="bg-white/5 text-white/80">
+        <tr>
+          <th class="px-3 py-2 text-left">Usuario</th>
+          <th class="px-3 py-2 text-left">Monto</th>
+          <th class="px-3 py-2 text-left">Red</th>
+          <th class="px-3 py-2 text-left">TXID</th>
+          <th class="px-3 py-2 text-left">Estado</th>
+          <th class="px-3 py-2 text-left">Fecha</th>
+          <th class="px-3 py-2 text-left">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in depositos %}
+        <tr class="hover:bg-white/5">
+          <td class="px-3 py-2">
+            <a href="{% url 'admin_usuario_perfil' d.usuario.id %}" class="text-neon hover:underline">{{ d.usuario.username }}</a>
+          </td>
+          <td class="px-3 py-2">{{ d.monto }}</td>
+          <td class="px-3 py-2">{{ d.red }}</td>
+          <td class="px-3 py-2 break-all">
+            {% if d.txid %}
+              <a href="{{ d.explorer_url|default:'#' }}" target="_blank" class="underline hover:text-neon">{{ d.txid }}</a>
+            {% else %}
+              <span class="text-white/40">—</span>
+            {% endif %}
+          </td>
+          <td class="px-3 py-2">
+            <span class="rounded-full px-2 py-1 text-xs
+              {% if d.estado == 'pendiente' %} bg-yellow-500/20 text-yellow-300
+              {% elif d.estado == 'aprobado' %} bg-emerald-500/20 text-emerald-300
+              {% else %} bg-rose-500/20 text-rose-300 {% endif %}">
+              {{ d.estado|capfirst }}
+            </span>
+          </td>
+          <td class="px-3 py-2">{{ d.fecha|date:"d/m/Y H:i" }}</td>
+          <td class="px-3 py-2">
+            {% if d.estado == 'pendiente' %}
+            <div class="flex gap-2">
+              <form method="post" action="{% url 'aprobar_deposito_usdt' d.id %}">{% csrf_token %}
+                <button class="rounded-md bg-neon text-black px-3 py-1 font-semibold">Aprobar</button>
+              </form>
+              <form method="post" action="{% url 'rechazar_deposito_usdt' d.id %}">{% csrf_token %}
+                <button class="rounded-md border border-white/10 px-3 py-1 hover:bg:white/5">Rechazar</button>
+              </form>
+            </div>
+            {% else %}
+              <span class="text-white/60">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="px-3 py-6 text-center text-white/60">No hay depósitos.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

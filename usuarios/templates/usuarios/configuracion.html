@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Configuración — Full Finanzas{% endblock %}
+{% block meta_description %}Editá tu perfil, seguridad, apariencia y ayuda.{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  <!-- Header -->
+  <header class="card p-6 mb-8 shadow-soft">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <p class="text-xs tracking-wider text-white/60 uppercase">Centro de preferencias</p>
+        <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold">
+          Configuración <span class="text-neon">Full Finanzas</span>
+        </h1>
+        <p class="mt-1 text-white/70">Personalizá tu experiencia y mantené tu cuenta segura.</p>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
+        <span class="inline-block h-2 w-2 rounded-full {% if request.user.has_2fa %}bg-emerald-500{% else %}bg-rose-500{% endif %}"></span>
+        {% if request.user.has_2fa %}2FA activo{% else %}2FA pendiente{% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="grid lg:grid-cols-12 gap-6">
+    <!-- Sidebar / Tabs -->
+    <aside class="lg:col-span-3">
+      <nav class="card p-4 sticky top-24 shadow-soft">
+        <ul class="space-y-1 text-sm">
+          <li>
+            <a href="#perfil" data-tab-link="perfil"
+               class="tab-link group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/5 border border-transparent">
+              <span class="h-2 w-2 rounded-full bg-white/20 group-[.is-active]:bg-neon"></span>
+              <span>Perfil</span>
+              <span class="ml-auto hidden group-[.is-active]:inline text-[10px] text-neon">Activo</span>
+            </a>
+          </li>
+          <li>
+            <a href="#seguridad" data-tab-link="seguridad"
+               class="tab-link group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/5 border border-transparent">
+              <span class="h-2 w-2 rounded-full bg-white/20 group-[.is-active]:bg-neon"></span>
+              <span>Seguridad</span>
+            </a>
+          </li>
+          <li>
+            <a href="#apariencia" data-tab-link="apariencia"
+               class="tab-link group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/5 border border-transparent">
+              <span class="h-2 w-2 rounded-full bg-white/20 group-[.is-active]:bg-neon"></span>
+              <span>Apariencia</span>
+            </a>
+          </li>
+          <li>
+            <a href="#ayuda" data-tab-link="ayuda"
+               class="tab-link group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/5 border border-transparent">
+              <span class="h-2 w-2 rounded-full bg-white/20 group-[.is-active]:bg-neon"></span>
+              <span>¿Necesitás ayuda?</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content Panels -->
+    <div class="lg:col-span-9 space-y-6">
+
+      <!-- PERFIL -->
+      <section id="panel-perfil" data-tab-panel="perfil" class="card p-6 shadow-soft">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Perfil</h2>
+          <span class="text-[11px] text-white/60">Algunos datos son de solo lectura</span>
+        </div>
+
+        <form method="post" action="{% url 'actualizar_perfil' %}" class="mt-5 grid gap-4 sm:grid-cols-2">
+          {% csrf_token %}
+          <label class="block">
+            <span class="text-xs text-white/60 mb-1 block">Nombre</span>
+            <input name="first_name"
+                   value="{% firstof request.user.first_name request.user.username %}"
+                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"
+                   readonly/>
+          </label>
+          <label class="block">
+            <span class="text-xs text-white/60 mb-1 block">Apellido</span>
+            <input name="last_name" value="{{ request.user.last_name }}"
+                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"
+                   readonly/>
+          </label>
+          <label class="block">
+            <span class="text-xs text-white/60 mb-1 block">Documento</span>
+            <input name="doc" value="{{ request.user.doc_tipo }} {{ request.user.doc_nro }}"
+                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                   readonly/>
+          </label>
+          <label class="block">
+            <span class="text-xs text-white/60 mb-1 block">Teléfono</span>
+            <input name="telefono" value="{{ request.user.telefono }}"
+                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"/>
+          </label>
+          <label class="block sm:col-span-2">
+            <span class="text-xs text-white/60 mb-1 block">Domicilio</span>
+            <input name="domicilio" value="{{ request.user.domicilio }}"
+                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"/>
+          </label>
+
+          <div class="sm:col-span-2 flex items-center justify-between pt-2">
+            <p class="text-xs text-white/60">El email se gestiona desde seguridad.</p>
+            <button class="rounded-xl bg-neon text-black font-semibold px-4 py-2 text-sm hover:opacity-90">Guardar cambios</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- SEGURIDAD -->
+      <section id="panel-seguridad" data-tab-panel="seguridad" class="card p-6 shadow-soft hidden">
+        <h2 class="text-lg font-semibold">Seguridad</h2>
+
+        <div class="mt-5 grid gap-6">
+          <!-- Password -->
+          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-medium">Cambiar contraseña</h3>
+              <span class="text-[11px] text-white/60">Recomendado actualizar cada 90 días</span>
+            </div>
+            <form method="post" action="{% url 'cambiar_password' %}" class="mt-3 grid sm:grid-cols-3 gap-3">
+              {% csrf_token %}
+              <input name="actual" type="password" placeholder="Actual"
+                     class="rounded-lg border border-white/10 bg-[#0b0f2a] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon" required>
+              <input name="nueva" type="password" placeholder="Nueva"
+                     class="rounded-lg border border-white/10 bg-[#0b0f2a] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon" required>
+              <input name="confirmar" type="password" placeholder="Confirmar"
+                     class="rounded-lg border border-white/10 bg-[#0b0f2a] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon" required>
+              <div class="sm:col-span-3 flex justify-end">
+                <button class="rounded-xl bg-neon text-black font-semibold px-4 py-2 text-sm hover:opacity-90">Actualizar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- 2FA -->
+          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-medium">Autenticación en 2 pasos (2FA)</h3>
+                <p class="text-sm text-white/70">Protegé tu cuenta con un segundo factor (app autenticador).</p>
+                <p class="mt-1 text-sm">
+                  Estado:
+                  {% if request.user.has_2fa %}
+                    <span class="font-semibold text-emerald-400">Activo</span>
+                  {% else %}
+                    <span class="font-semibold text-rose-400">Desactivado</span>
+                  {% endif %}
+                </p>
+              </div>
+              <div class="shrink-0">
+                {% if request.user.has_2fa %}
+                  <a href="{% url 'desactivar_2fa' %}"
+                     class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10">Desactivar</a>
+                {% else %}
+                  <a href="{% url 'activar_2fa' %}"
+                     class="rounded-xl bg-neon text-black font-semibold px-4 py-2 text-sm hover:opacity-90">Activar 2FA</a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+            <h3 class="font-medium">Correo electrónico</h3>
+            <p class="text-sm text-white/70">Usamos tu email para avisos de login y actividad.</p>
+            <form method="post" action="{% url 'cambiar_email' %}" class="mt-3 grid sm:grid-cols-3 gap-3">
+              {% csrf_token %}
+              <input name="email" type="email" value="{{ request.user.email }}"
+                     class="rounded-lg border border-white/10 bg-[#0b0f2a] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon" required>
+              <input name="password" type="password" placeholder="Contraseña actual"
+                     class="rounded-lg border border-white/10 bg-[#0b0f2a] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon" required>
+              <div class="sm:col-span-3 flex justify-end">
+                <button class="rounded-xl bg-neon text-black font-semibold px-4 py-2 text-sm hover:opacity-90">Actualizar email</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- APARIENCIA -->
+      <section id="panel-apariencia" data-tab-panel="apariencia" class="card p-6 shadow-soft hidden">
+        <h2 class="text-lg font-semibold">Apariencia</h2>
+        <p class="text-sm text-white/70">Elegí cómo se ve la app. Se guarda en este navegador.</p>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+          <label class="group rounded-xl border border-white/10 bg-white/5 p-4 flex items-center justify-between hover:bg-white/10">
+            <span>Claro</span>
+            <input type="radio" name="theme" value="light" class="theme-radio h-4 w-4 accent-neon">
+          </label>
+          <label class="group rounded-xl border border-white/10 bg-white/5 p-4 flex items-center justify-between hover:bg-white/10">
+            <span>Oscuro</span>
+            <input type="radio" name="theme" value="dark" class="theme-radio h-4 w-4 accent-neon">
+          </label>
+          <label class="group rounded-xl border border-white/10 bg-white/5 p-4 flex items-center justify-between hover:bg-white/10">
+            <span>Automático</span>
+            <input type="radio" name="theme" value="auto" class="theme-radio h-4 w-4 accent-neon">
+          </label>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button id="save-theme" class="rounded-xl bg-neon text-black font-semibold px-4 py-2 text-sm hover:opacity-90">Guardar preferencia</button>
+        </div>
+      </section>
+
+      <!-- AYUDA -->
+      <section id="panel-ayuda" data-tab-panel="ayuda" class="card p-6 shadow-soft hidden">
+        <h2 class="text-lg font-semibold">¿Necesitás ayuda?</h2>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+            <h3 class="font-medium">Soporte</h3>
+            <p class="text-sm text-white/70">Escribinos y respondemos a la brevedad.</p>
+            <div class="mt-3 flex gap-2">
+              <a href="{% url 'soporte' %}" class="rounded-xl bg-neon text-black font-semibold px-4 py-2 text-sm hover:opacity-90">Abrir ticket</a>
+              <a href="mailto:soporte@fullfinanzas.com" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10">Email</a>
+            </div>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+            <h3 class="font-medium">Preguntas frecuentes</h3>
+            <p class="text-sm text-white/70">Guías rápidas y soluciones comunes.</p>
+            <div class="mt-3">
+              <a href="{% url 'faq' %}" class="text-neon text-sm underline">Ir a FAQs</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<!-- Tabs + Apariencia -->
+<script>
+(function(){
+  // --- Tabs: activa por hash o ?tab=
+  const getTab = () => (new URLSearchParams(location.search).get('tab')) || (location.hash||'#perfil').replace('#','') || 'perfil';
+  const links  = document.querySelectorAll('[data-tab-link]');
+  const panels = document.querySelectorAll('[data-tab-panel]');
+
+  function decorateActiveState(){
+    // añade/remueve clase "is-active" al <a> activo para estilos de grupo
+    links.forEach(a=>{
+      const on = a.classList.contains('bg-active'); // legacy fallback
+      if (on) a.classList.add('is-active'); else a.classList.remove('is-active');
+    });
+  }
+
+  function activate(tab){
+    links.forEach(a=>{
+      const on = a.dataset.tabLink===tab;
+      a.classList.toggle('bg-white/5', on);
+      a.classList.toggle('border-white/10', on);
+      a.classList.toggle('text-white', on);
+      a.classList.toggle('is-active', on);
+    });
+    panels.forEach(p=>p.classList.toggle('hidden', p.dataset.tabPanel!==tab));
+    history.replaceState(null,'',`?tab=${tab}`);
+  }
+
+  links.forEach(a=>a.addEventListener('click', (e)=>{ e.preventDefault(); activate(a.dataset.tabLink); }));
+  activate(getTab());
+  decorateActiveState();
+
+  // --- Apariencia ---
+  const radios = document.querySelectorAll('.theme-radio');
+  const current = localStorage.getItem('finanxis-theme') || 'auto';
+  radios.forEach(r => r.checked = (r.value===current));
+
+  function applyTheme(val){
+    const root = document.documentElement;
+    if(val==='dark'){ root.setAttribute('data-theme','dark'); }
+    else { root.removeAttribute('data-theme'); } // claro/auto por defecto
+    localStorage.setItem('finanxis-theme', val);
+  }
+
+  document.getElementById('save-theme')?.addEventListener('click', ()=>{
+    const picked = Array.from(radios).find(r=>r.checked)?.value || 'auto';
+    applyTheme(picked);
+  });
+})();
+</script>
+{% endblock %}
