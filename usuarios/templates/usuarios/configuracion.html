@@ -75,30 +75,30 @@
             <span class="text-xs text-white/60 mb-1 block">Nombre</span>
             <input name="first_name"
                    value="{% firstof request.user.first_name request.user.username %}"
-                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"
+                   class="text-white w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"
                    readonly/>
           </label>
           <label class="block">
             <span class="text-xs text-white/60 mb-1 block">Apellido</span>
             <input name="last_name" value="{{ request.user.last_name }}"
-                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"
+                   class="text-white w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"
                    readonly/>
           </label>
           <label class="block">
             <span class="text-xs text-white/60 mb-1 block">Documento</span>
             <input name="doc" value="{{ request.user.doc_tipo }} {{ request.user.doc_nro }}"
-                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                   class="text-white w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                    readonly/>
           </label>
           <label class="block">
             <span class="text-xs text-white/60 mb-1 block">Teléfono</span>
             <input name="telefono" value="{{ request.user.telefono }}"
-                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"/>
+                   class="text-white w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"/>
           </label>
           <label class="block sm:col-span-2">
             <span class="text-xs text-white/60 mb-1 block">Domicilio</span>
             <input name="domicilio" value="{{ request.user.domicilio }}"
-                   class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"/>
+                   class="text-white w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon"/>
           </label>
 
           <div class="sm:col-span-2 flex items-center justify-between pt-2">
@@ -192,10 +192,7 @@
             <span>Oscuro</span>
             <input type="radio" name="theme" value="dark" class="theme-radio h-4 w-4 accent-neon">
           </label>
-          <label class="group rounded-xl border border-white/10 bg-white/5 p-4 flex items-center justify-between hover:bg-white/10">
-            <span>Automático</span>
-            <input type="radio" name="theme" value="auto" class="theme-radio h-4 w-4 accent-neon">
-          </label>
+          
         </div>
 
         <div class="mt-4 flex justify-end">
@@ -219,7 +216,7 @@
             <h3 class="font-medium">Preguntas frecuentes</h3>
             <p class="text-sm text-white/70">Guías rápidas y soluciones comunes.</p>
             <div class="mt-3">
-              <a href="{% url 'faq' %}" class="text-neon text-sm underline">Ir a FAQs</a>
+              <a href="{% url 'faq' %}" class="text-black text-sm rounded-xl border border-white/10 bg-white/5 px-4 py-2">Ir a FAQs</a>
             </div>
           </div>
         </div>
@@ -232,19 +229,10 @@
 <!-- Tabs + Apariencia -->
 <script>
 (function(){
-  // --- Tabs: activa por hash o ?tab=
+  // --- Tabs (igual que antes) ---
   const getTab = () => (new URLSearchParams(location.search).get('tab')) || (location.hash||'#perfil').replace('#','') || 'perfil';
   const links  = document.querySelectorAll('[data-tab-link]');
   const panels = document.querySelectorAll('[data-tab-panel]');
-
-  function decorateActiveState(){
-    // añade/remueve clase "is-active" al <a> activo para estilos de grupo
-    links.forEach(a=>{
-      const on = a.classList.contains('bg-active'); // legacy fallback
-      if (on) a.classList.add('is-active'); else a.classList.remove('is-active');
-    });
-  }
-
   function activate(tab){
     links.forEach(a=>{
       const on = a.dataset.tabLink===tab;
@@ -256,27 +244,25 @@
     panels.forEach(p=>p.classList.toggle('hidden', p.dataset.tabPanel!==tab));
     history.replaceState(null,'',`?tab=${tab}`);
   }
-
   links.forEach(a=>a.addEventListener('click', (e)=>{ e.preventDefault(); activate(a.dataset.tabLink); }));
   activate(getTab());
-  decorateActiveState();
 
   // --- Apariencia ---
-  const radios = document.querySelectorAll('.theme-radio');
-  const current = localStorage.getItem('finanxis-theme') || 'auto';
-  radios.forEach(r => r.checked = (r.value===current));
+  const radios = document.querySelectorAll('.theme-radio'); // inputs radio con value="light" | "dark"
+  const saved = localStorage.getItem('fullfinanzas-theme') || 'light';
+  radios.forEach(r => r.checked = (r.value === saved));
 
   function applyTheme(val){
-    const root = document.documentElement;
-    if(val==='dark'){ root.setAttribute('data-theme','dark'); }
-    else { root.removeAttribute('data-theme'); } // claro/auto por defecto
-    localStorage.setItem('finanxis-theme', val);
+    if(val === 'dark') document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.removeAttribute('data-theme'); // light
+    localStorage.setItem('fullfinanzas-theme', val);
   }
 
   document.getElementById('save-theme')?.addEventListener('click', ()=>{
-    const picked = Array.from(radios).find(r=>r.checked)?.value || 'auto';
+    const picked = Array.from(radios).find(r=>r.checked)?.value || 'light';
     applyTheme(picked);
   });
 })();
 </script>
+
 {% endblock %}

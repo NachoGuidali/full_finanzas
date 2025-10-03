@@ -16,6 +16,15 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+  (function () {
+    try {
+      const v = localStorage.getItem('fullfinanzas-theme'); // 'light' | 'dark'
+      if (v === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme'); // light por defecto
+    } catch (_) {}
+  })();
+</script>
+  <script>
     tailwind.config = {
       theme: {
         container: { center: true, padding: '1rem' },
@@ -49,32 +58,63 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --bg: #010318;
-      --card: #0b0f2a;
-      --ring: #D2FF00;
-    }
+  :root {
+    /* Light (por defecto) */
+    --bg:    #f6f8fc;
+    --fg:    #0B1020;
+    --muted: #475569;
+    --card:  #ffffff;
+    --ring:  #D2FF00;
+    --border: rgba(2,6,23,.12);
+    --tint-5:  rgba(2,6,23,.05);
+    --tint-10: rgba(2,6,23,.10);
+    --input-bg:#ffffff;
+    --input-text:#0b1020;
+    --input-border:rgba(2,6,23,0.18);
+    --input-placeholder:#6b7280;
+  }
+  html[data-theme="dark"]{
+    --bg:#838282; --fg:#ffffff; --muted:rgba(255,255,255,.70);
+    --card:#121A36; --border:rgba(255,255,255,.10);
+    --tint-5:rgba(255,255,255,.05); --tint-10:rgba(255,255,255,.10);
+  }
+  html{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
 
-    html {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    }
+  body{ background:var(--bg); color:var(--fg); }
 
-    .card {
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, .08);
-      border-radius: 1rem;
-    }
-  </style>
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:1rem;
+    box-shadow:0 10px 20px -12px rgba(0,0,0,.25);
+  }
+
+  /* Adaptadores de utilidades Tailwind */
+  .text-white      { color: var(--fg)!important; }
+  .text-white\/70  { color: color-mix(in oklab, var(--fg) 70%, transparent)!important; }
+  .text-white\/60  { color: color-mix(in oklab, var(--fg) 60%, transparent)!important; }
+  .text-white\/50  { color: color-mix(in oklab, var(--fg) 50%, transparent)!important; }
+  .text-white\/40  { color: color-mix(in oklab, var(--fg) 40%, transparent)!important; }
+
+  .bg-white\/5     { background-color: var(--tint-5)!important; }
+  .bg-white\/10    { background-color: var(--tint-10)!important; }
+  .border-white\/10{ border-color: var(--tint-10)!important; }
+
+  .bg-ink\/70 { background-color: color-mix(in oklab, var(--bg) 70%, transparent)!important; }
+  .focus\:ring-neon:focus { box-shadow: 0 0 0 2px var(--ring) }
+</style>
+
 
   {% block head_extra %}{% endblock %}
   {% block json_ld %}
-  <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"WebSite","name":"Exchange","url":"{{ request.build_absolute_uri|default:'' }}"}
-  </script>
-  {% endblock %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"Full Finanzas","url":"{{ request.build_absolute_uri|default:'' }}"}
+</script>
+{% endblock %}
 </head>
 
-<body class="relative min-h-screen bg-[#010318] text-white">
+<body class="relative min-h-screen" style="background:var(--bg)">
+
   <!-- Fondo neon global (sutil) -->
   <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden">
     <!-- velo diagonal muy sutil -->
@@ -121,11 +161,11 @@
             </button>
 
             <form method="post" action="{% url 'logout' %}">
-  {% csrf_token %}
-  <button type="submit" class="hidden sm:inline-block text-sm text-white/70 hover:text-white">
-    Cerrar sesión
-  </button>
-</form>
+              {% csrf_token %}
+              <button type="submit" class="hidden sm:inline-block text-sm text-white/70 hover:text-white">
+                Cerrar sesión
+              </button>
+            </form>
             <div class=""><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
                 aria-hidden="true">
                 <path fill="currentColor" d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" />
@@ -150,10 +190,10 @@
         {% block content %}{% endblock %}
       </main>
 
-      
+
     </div>
   </div>
-
+  {% include "includes/footer.html" %}
   {% block scripts %}
   <script>
     // drawer mobile
@@ -223,6 +263,11 @@
     });
   </script>
   {% endblock %}
+  <script>
+    document.querySelectorAll('input, select, textarea').forEach(el=>{
+    el.classList.add('w-full','rounded-md','border','border-white/10','bg-white','text-black','px-3','py-2','focus:outline-none','focus:ring-2');
+  });
+  </script>
 </body>
 
 </html>

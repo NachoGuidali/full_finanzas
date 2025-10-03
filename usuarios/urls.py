@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import registro, dashboard, panel_admin, cambiar_estado_verificacion, agregar_saldo, panel_depositos, aprobar_deposito, historial_usuario, operar, enviar_retiro, aprobar_retiro, solicitar_retiro, exportar_historial_usuario, exportar_movimientos_admin, exportar_movimientos_usuario, obtener_notificaciones, contar_notificaciones, solicitar_retiro_cripto, aprobar_retiro_cripto, panel_retiros, rechazar_deposito_usdt, aprobar_deposito_usdt, panel_depositos_usdt, depositar_usdt, logout_view, verificar_boleto, comprobantes, descargar_boleto, home, actualizar_perfil, cambiar_email, cambiar_password, soporte, faq, perfil, configuracion, activar_2fa, desactivar_2fa, geo_localidades, geo_provincias, tyc, mis_movimientos, exportar_movimientos, mis_tickets, admin_usuario_perfil, rechazar_retiro_cripto
+from .views import registro, dashboard, panel_admin, cambiar_estado_verificacion, agregar_saldo, panel_depositos, aprobar_deposito, historial_usuario, operar, enviar_retiro, aprobar_retiro, solicitar_retiro, exportar_historial_usuario, exportar_movimientos_admin, exportar_movimientos_usuario, obtener_notificaciones, contar_notificaciones, solicitar_retiro_cripto, aprobar_retiro_cripto, panel_retiros, rechazar_deposito_usdt, aprobar_deposito_usdt, panel_depositos_usdt, depositar_usdt, logout_view, verificar_boleto, comprobantes, descargar_boleto, home, actualizar_perfil, cambiar_email, cambiar_password, soporte, faq, perfil, configuracion, activar_2fa, desactivar_2fa, geo_localidades, geo_provincias, tyc, mis_movimientos, exportar_movimientos, mis_tickets, admin_usuario_perfil, rechazar_retiro_cripto, rechazar_retiro_ars, admin_usuarios_list
 from . import views_geo
 
 urlpatterns = [
@@ -16,7 +16,7 @@ urlpatterns = [
     path('operar/', operar, name='operar'),
     path('admin-dashboard/retiro/aprobar/<int:id>/', aprobar_retiro, name='aprobar_retiro'),
     path('admin-dashboard/retiro/enviar/<int:id>/', enviar_retiro, name='enviar_retiro'),
-    
+    path('admin-dashboard/retiro/rechazar/<int:id>/', rechazar_retiro_ars, name='rechazar_retiro_ars'),
 
     path('solicitar-retiro/', solicitar_retiro, name='solicitar_retiro'),
     path('exportar-movimientos/', exportar_movimientos_usuario, name='exportar_movimientos_usuario'),
@@ -33,6 +33,8 @@ urlpatterns = [
     path('admin-dashboard/depositos-usdt/<int:deposito_id>/aprobar/', aprobar_deposito_usdt, name='aprobar_deposito_usdt'),
     path('admin-dashboard/depositos-usdt/<int:deposito_id>/rechazar/', rechazar_deposito_usdt, name='rechazar_deposito_usdt'),
     path("admin-dashboard/usuario/<int:user_id>/", admin_usuario_perfil, name="admin_usuario_perfil"),
+    path("admin-dashboard/usuarios/", admin_usuarios_list, name="admin_usuarios_list"),
+    
 
     path("comprobantes/", comprobantes, name="comprobantes"),
     path("boletos/<str:numero>/", verificar_boleto, name="verificar_boleto"),

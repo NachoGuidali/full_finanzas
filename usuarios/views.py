@@ -23,7 +23,8 @@ from django.utils.dateparse import parse_date
 from django.db import models
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
 import uuid
 
 
@@ -57,20 +58,19 @@ def registro(request):
 def geo_provincias(request):
     pais_id = request.GET.get("pais_id")
     if not pais_id:
-        return JsonResponse({"results": []})
+        return JsonResponse({"provincias": []})
     qs = Provincia.objects.filter(pais_id=pais_id).order_by("nombre")
     data = [{"id": p.id, "nombre": p.nombre} for p in qs]
-    return JsonResponse({"results": data})
-
+    return JsonResponse({"provincias": data})
 
 @require_GET
 def geo_localidades(request):
     prov_id = request.GET.get("provincia_id")
     if not prov_id:
-        return JsonResponse({"results": []})
+        return JsonResponse({"localidades": []})
     qs = Localidad.objects.filter(provincia_id=prov_id).order_by("nombre")
     data = [{"id": l.id, "nombre": l.nombre} for l in qs]
-    return JsonResponse({"results": data})
+    return JsonResponse({"localidades": data})
 
 
 
@@ -1591,7 +1591,7 @@ def desactivar_2fa(request):
         messages.error(request, f"No se pudo desactivar 2FA: {e}")
     return redirect(f"{reverse('configuracion')}?tab=seguridad")
 
-@login_required
+
 def tyc(request):
     if request.method == "POST":
         request.user.marcar_tyc_aceptado(getattr(settings,"TYC_VERSION",""))
@@ -1727,4 +1727,39 @@ def admin_usuario_perfil(request, user_id):
         "depositos": depositos,
         "depositos_crypto": depositos_crypto,
         "boletos": boletos,
+    })
+
+
+@login_required
+@user_passes_test(es_admin)
+def admin_usuarios_list(request):
+    qs = Usuario.objects.all().order_by('-date_joined')
+
+    # --- filtros ---
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(
+            Q(username__icontains=q) |
+            Q(email__icontains=q) |
+            Q(first_name__icontains=q) |
+            Q(last_name__icontains=q) |
+            Q(doc_nro__icontains=q)
+        )
+
+    estado = request.GET.get('estado', '')
+    if estado in ('pendiente', 'aprobado', 'rechazado'):
+        qs = qs.filter(estado_verificacion=estado)
+
+    activo = request.GET.get('activo', '')
+    if activo in ('1', '0'):
+        qs = qs.filter(is_active=(activo == '1'))
+
+    # --- paginación ---
+    paginator = Paginator(qs, 50)
+    page = request.GET.get('page')
+    usuarios = paginator.get_page(page)
+
+    return render(request, "usuarios/admin_usuarios_list.html", {
+        "usuarios": usuarios,
+        "f": {"q": q, "estado": estado, "activo": activo},
     })

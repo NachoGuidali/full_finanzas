@@ -23,7 +23,7 @@
   <!-- KPIs -->
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
     <div class="card p-4 shadow-soft">
-      <p class="text-white/60 text-sm">Usuarios pendientes KYC</p>
+      <p class=" text-sm">Usuarios pendientes KYC</p>
       <p class="text-2xl font-bold">{{ kpi_pendientes_kyc|default:"0" }}</p>
     </div>
     <div class="card p-4 shadow-soft">
@@ -149,8 +149,8 @@
                   <form method="post" action="{% url 'aprobar_retiro' r.id %}">{% csrf_token %}
                     <button class="rounded-md bg-neon text-black px-3 py-1 font-semibold">Aprobar</button>
                   </form>
-                  <form method="post" action="{% url 'rechazar_retiro' r.id %}">{% csrf_token %}
-                    <button class="rounded-md bg-neon text-black px-3 py-1 font-semibold">Aprobar</button>
+                  <form method="post" action="{% url 'rechazar_retiro_ars' r.id %}">{% csrf_token %}
+                    <button class="rounded-md bg-neon text-black px-3 py-1 font-semibold">Rechazar</button>
                   </form>
                   {% endif %}
                   {% if r.estado == 'aprobado' %}

@@ -1,12 +1,29 @@
-<footer class="border-t border-ink-200 bg-white/80">
-  <div class="container flex flex-col items-center justify-between gap-4 py-8 sm:flex-row">
-    <p class="text-sm text-ink-500">© {{ now|date:'Y' }} Exchange. All rights reserved.</p>
-    <nav class="text-sm text-ink-600">
-      <a href="{% url 'operar' %}" class="hover:text-ink-900">Operar</a>
-      <span class="mx-3 text-ink-300">•</span>
-      <a href="{% url 'dashboard' %}" class="hover:text-ink-900">Dashboard</a>
-      <span class="mx-3 text-ink-300">•</span>
-      <a href="#" class="hover:text-ink-900">Soporte</a>
-    </nav>
+<footer class="border-t border-ink-200 bg-white/60">
+  <div class="container py-6">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+
+      <!-- Izquierda: copyright + links -->
+      <div class="space-y-2">
+        <p class="text-sm text-ink-500">
+          © {{ now|date:'Y' }} {{ EMPRESA_NOMBRE|default:"Full Finanzas" }}. Todos los derechos reservados.
+        </p>
+        <nav class="text-sm text-ink-600">
+          <a href="{% url 'tyc' %}" class="hover:text-ink-900">Términos y Condiciones</a>
+          <span class="mx-3 text-ink-300">•</span>
+          <a href="{% url 'soporte' %}" class="hover:text-ink-900">Soporte</a>
+        </nav>
+      </div>
+
+      <!-- Derecha: leyenda PSAV -->
+      <p class="text-[9px] leading-snug text-ink-600 sm:max-w-xl sm:text-right sm:ml-auto">
+        <strong>Leyenda obligatoria CNV – PSAV:</strong>
+        Francisco Molina - Proveedor de Servicios de Activos Virtuales (PSAV) inscripto bajo el N°16 de la fecha
+        13 de mayo de 2025 del Registro PSAV – Personas Humanas, en el Registro de Proveedores de Servicios de
+        Activos Virtuales de CNV. Este registro es a los fines del control como Sujeto Obligado ante la Unidad de
+        Información Financiera (UIF) y de todo otro ente regulador facultado a tal efecto, en el marco de sus competencias,
+        y no implica licencia ni supervisión por parte de la COMISIÓN NACIONAL DE VALORES sobre la actividad realizada por el PSAV.
+      </p>
+
+    </div>
   </div>
 </footer>

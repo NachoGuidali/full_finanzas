@@ -5,9 +5,9 @@
 {% block content %}
 <style>.ff-bleed{position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;width:100vw}</style>
 
-<section class="ff-bleed relative text-white overflow-hidden">
-  <!-- Degradé sutil visible (diagonal + radial) -->
-  <div class="pointer-events-none absolute inset-0 opacity-80 mix-blend-screen">
+<section class="ff-bleed relative overflow-hidden">
+  <!-- Degradé sutil visible -->
+  <div class="pointer-events-none absolute inset-0 opacity-80">
     <div class="absolute inset-0 bg-gradient-to-br from-[#D2FF00]/10 via-transparent to-[#D2FF00]/5"></div>
     <div class="absolute -top-20 -right-24 w-[60vw] h-[60vw] bg-[radial-gradient(ellipse_at_center,theme(colors.neon)/.12,transparent_60%)]"></div>
   </div>
@@ -15,7 +15,7 @@
   <div class="relative max-w-7xl mx-auto px-6 py-10">
     <div class="mb-6">
       <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
-        <span class="text-[#D2FF00]">Operaciones</span>
+        <span class="text-neon">Operaciones</span>
       </h1>
     </div>
 
@@ -23,29 +23,28 @@
       <!-- Columna izquierda: formularios -->
       <div class="lg:col-span-8 space-y-6">
         <div class="grid gap-4 sm:grid-cols-2">
+
           <!-- COMPRAR -->
-          <article class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-soft">
+          <article class="card p-5 shadow-soft">
             <h2 class="mb-2 text-lg font-semibold">Comprar</h2>
             <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='compra'">
               {% csrf_token %}
               <input type="hidden" name="operacion" value="compra" />
               <div>
-                <label class="mb-1 block text-sm text-white/70">Moneda</label>
-                <select id="compra-moneda" name="moneda"
-                        class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]">
+                <label class="ff-label mb-1 block">Moneda</label>
+                <select id="compra-moneda" name="moneda" class="ff-select w-full">
                   <option value="USDT" data-venta="{{ cot_usdt.venta }}">USDT — Venta: ${{ cot_usdt.venta }}</option>
-                  <option value="USD"  data-venta="{{ cot_usd.venta }}">USD — Venta: ${{ cot_usd.venta }}</option>
+                  <option value="USD"  data-venta="{{ cot_usd.venta  }}">USD — Venta: ${{ cot_usd.venta  }}</option>
                 </select>
               </div>
               <div>
-                <label class="mb-1 block text-sm text-white/70">Monto en ARS</label>
-                <input id="compra-monto" name="monto" step="0.01" type="number" required
-                       class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]" />
+                <label class="ff-label mb-1 block">Monto en ARS</label>
+                <input id="compra-monto" name="monto" step="0.01" type="number" required class="ff-input w-full" />
               </div>
 
               <!-- Preview COMPRA -->
-              <div class="rounded-xl border border-white/10 bg-[#D2FF00]/5 p-4 text-sm" aria-live="polite">
-                <div class="flex flex-wrap gap-x-6 gap-y-2">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm" aria-live="polite">
+                <div class="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
                   <div>💰 ARS a usar: <b id="compra-ars">—</b></div>
                   <div>💱 Cotización venta: <b id="compra-rate">—</b></div>
                   <div class="flex items-center gap-1">
@@ -56,37 +55,35 @@
                     <span class="ml-2">Recibirás: <b id="compra-recibe">—</b></span>
                   </div>
                 </div>
-                <p class="mt-2 text-[12px] text-white/60">Valores estimados. La comisión puede estar incluida en la cotización.</p>
-                <p id="compra-warn" class="mt-1 text-[12px] text-red-400 hidden">Saldo ARS insuficiente.</p>
+                <p class="mt-2 text-[12px] text-gray-600">Valores estimados. La comisión puede estar incluida en la cotización.</p>
+                <p id="compra-warn" class="mt-1 text-[12px] text-red-600 hidden">Saldo ARS insuficiente.</p>
               </div>
 
-              <button class="w-full rounded-xl bg-[#D2FF00] px-4 py-2 font-semibold text-black hover:opacity-90 transition">Comprar</button>
+              <button class="w-full btn-neon rounded-lg bg-neon text-black font-semibold px-4 py-2">Comprar</button>
             </form>
           </article>
 
           <!-- VENDER -->
-          <article class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-soft">
+          <article class="card p-5 shadow-soft">
             <h2 class="mb-2 text-lg font-semibold">Vender</h2>
             <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='venta'">
               {% csrf_token %}
               <input type="hidden" name="operacion" value="venta" />
               <div>
-                <label class="mb-1 block text-sm text-white/70">Moneda</label>
-                <select id="venta-moneda" name="moneda"
-                        class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]">
+                <label class="ff-label mb-1 block">Moneda</label>
+                <select id="venta-moneda" name="moneda" class="ff-select w-full">
                   <option value="USDT" data-compra="{{ cot_usdt.compra }}">USDT — Compra: ${{ cot_usdt.compra }}</option>
-                  <option value="USD"  data-compra="{{ cot_usd.compra }}">USD — Compra: ${{ cot_usd.compra }}</option>
+                  <option value="USD"  data-compra="{{ cot_usd.compra  }}">USD — Compra: ${{ cot_usd.compra  }}</option>
                 </select>
               </div>
               <div>
-                <label class="mb-1 block text-sm text-white/70">Monto a vender (USDT/USD)</label>
-                <input id="venta-monto" name="monto" step="0.01" type="number" required
-                       class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]" />
+                <label class="ff-label mb-1 block">Monto a vender (USDT/USD)</label>
+                <input id="venta-monto" name="monto" step="0.01" type="number" required class="ff-input w-full" />
               </div>
 
               <!-- Preview VENTA -->
-              <div class="rounded-xl border border-white/10 bg-[#D2FF00]/5 p-4 text-sm" aria-live="polite">
-                <div class="flex flex-wrap gap-x-6 gap-y-2">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm" aria-live="polite">
+                <div class="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
                   <div class="flex items-center gap-1">
                     <span>📤 Flujo:</span>
                     <span><b id="venta-cant">—</b> <span id="venta-sym"></span></span>
@@ -96,77 +93,74 @@
                   <div>💱 Cotización compra: <b id="venta-rate">—</b></div>
                   <div>💵 Recibirás ARS: <b id="venta-ars">—</b></div>
                 </div>
-                <p class="mt-2 text-[12px] text-white/60">Valores estimados al momento de la orden.</p>
-                <p id="venta-warn" class="mt-1 text-[12px] text-red-400 hidden">Saldo insuficiente para vender.</p>
+                <p class="mt-2 text-[12px] text-gray-600">Valores estimados al momento de la orden.</p>
+                <p id="venta-warn" class="mt-1 text-[12px] text-red-600 hidden">Saldo insuficiente para vender.</p>
               </div>
 
-              <button class="w-full rounded-xl bg-[#D2FF00] px-4 py-2 font-semibold text-black hover:opacity-90 transition">Vender</button>
+              <button class="w-full btn-neon px-4 py-2 rounded-lg bg-neon text-black font-semibold">Vender</button>
             </form>
           </article>
 
           <!-- SWAP -->
-          <article class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-soft sm:col-span-2">
-            <h2 class="mb-2 text-lg font-semibold">
-              Swap USD <span class="text-neon">⇄</span> USDT
-            </h2>
+          <article class="card p-5 shadow-soft sm:col-span-2">
+            <h2 class="mb-2 text-lg font-semibold">Swap USD <span class="text-neon">⇄</span> USDT</h2>
             <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='swap'">
               {% csrf_token %}
               <input type="hidden" name="operacion" value="swap" />
               <div class="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label class="mb-1 block text-sm text-white/70">Dirección</label>
-                  <select id="swap-dir" name="swap_direccion" required
-                          class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]">
+                  <label class="ff-label mb-1 block">Dirección</label>
+                  <select id="swap-dir" name="swap_direccion" required class="ff-select w-full">
                     <option value="USD_to_USDT">USD → USDT</option>
                     <option value="USDT_to_USD">USDT → USD</option>
                   </select>
-                  <p class="mt-1 text-xs text-white/50">Tasa base: {{ swap_rate }} • Comisión: {{ swap_fee_bps }} bps</p>
+                  <p class="mt-1 text-xs text-white-600">Tasa base: {{ swap_rate }} • Comisión: {{ swap_fee_bps }} bps</p>
                 </div>
                 <div>
-                  <label class="mb-1 block text-sm text-white/70">Monto (moneda de origen)</label>
-                  <input id="swap-monto" name="monto" step="0.01" type="number" required
-                         class="w-full rounded-xl border border-white/10 bg-[#0b0f2a] px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#D2FF00]" />
+                  <label class="ff-label mb-1 block">Monto (moneda de origen)</label>
+                  <input id="swap-monto" name="monto" step="0.01" type="number" required class="ff-input w-full" />
                 </div>
               </div>
 
               <!-- Preview SWAP -->
-              <div class="rounded-xl border border-white/10 bg-[#D2FF00]/5 p-4 text-sm" aria-live="polite">
-                <div class="flex flex-wrap gap-x-6 gap-y-2">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm" aria-live="polite">
+                <div class="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
                   <div>🔁 Dirección:
-                    <b id="swap-pretty">
-                      USD <span class="text-neon" aria-hidden="true">→</span> USDT
-                    </b>
+                    <b id="swap-pretty">USD <span class="text-neon" aria-hidden="true">→</span> USDT</b>
                   </div>
                   <div>📤 Origen: <b id="swap-origen">—</b></div>
                   <div>📥 Recibirás: <b id="swap-recibe">—</b></div>
                 </div>
-                <p class="mt-2 text-[12px] text-white/60">Importe neto con comisión. Valores estimados.</p>
-                <p id="swap-warn" class="mt-1 text-[12px] text-red-400 hidden">Saldo insuficiente para el swap.</p>
+                <p class="mt-2 text-[12px] text-white-600">Importe neto con comisión. Valores estimados.</p>
+                <p id="swap-warn" class="mt-1 text-[12px] text-red-600 hidden">Saldo insuficiente para el swap.</p>
               </div>
 
-              <button class="w-full rounded-xl bg-[#D2FF00] px-4 py-2 font-semibold text-black hover:opacity-90 transition">Convertir</button>
+              <button class="w-full btn-neon px-4 py-2 rounded-lg bg-neon text-black font-semibold">Convertir</button>
             </form>
           </article>
         </div>
       </div>
 
-      <!-- Columna derecha: Ayuda + Saldos apilados -->
+      <!-- Columna derecha: Ayuda + Saldos -->
       <aside class="lg:col-span-4 space-y-4">
-        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-5 shadow-xl">
+        <div class="card p-5 shadow-soft">
           <h2 class="mb-3 text-lg font-semibold">Ayuda</h2>
-          <p class="text-sm text-white/70">
-            Elegí la moneda y el monto. Para <span class="text-[#D2FF00] font-medium">Comprar</span> ingresás ARS; para
-            <span class="text-[#D2FF00] font-medium">Vender</span> ingresás la cantidad de USDT/USD. Confirmá el resumen antes de enviar.
+          <p class="text-sm text-white-700">
+            Elegí la moneda y el monto. Para <span class="text-neon font-medium">Comprar</span> ingresás ARS; para
+            <span class="text-neon font-medium">Vender</span> ingresás la cantidad de USDT/USD. Confirmá el resumen antes de enviar.
           </p>
         </div>
-        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-4 shadow-xl">
-          <p class="text-white/60">Saldo ARS</p><p class="mt-1 text-xl font-semibold">${{ request.user.saldo_ars }}</p>
+        <div class="card p-4 shadow-soft">
+          <p class="text-white-600">Saldo ARS</p>
+          <p class="mt-1 text-xl font-semibold">${{ request.user.saldo_ars }}</p>
         </div>
-        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-4 shadow-xl">
-          <p class="text-white/60">Saldo USDT</p><p class="mt-1 text-xl font-semibold">{{ request.user.saldo_usdt }}</p>
+        <div class="card p-4 shadow-soft">
+          <p class="text-white-600">Saldo USDT</p>
+          <p class="mt-1 text-xl font-semibold">{{ request.user.saldo_usdt }}</p>
         </div>
-        <div class="rounded-2xl border border-white/10 bg-[#0b0f2a]/90 p-4 shadow-xl">
-          <p class="text-white/60">Saldo USD</p><p class="mt-1 text-xl font-semibold">{{ request.user.saldo_usd|default:"0.00" }}</p>
+        <div class="card p-4 shadow-soft">
+          <p class="text-white-600">Saldo USD</p>
+          <p class="mt-1 text-xl font-semibold">{{ request.user.saldo_usd|default:"0.00" }}</p>
         </div>
       </aside>
     </div>
@@ -332,5 +326,10 @@
     }, false);
   });
 })();
+</script>
+<script>
+  document.querySelectorAll('input, select, textarea').forEach(el=>{
+    el.classList.add('w-full','rounded-md','border','border-white/10','bg-white','text-black','px-3','py-2','focus:outline-none','focus:ring-2','focus:ring-neon');
+  });
 </script>
 {% endblock %}

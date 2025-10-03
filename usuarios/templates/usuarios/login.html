@@ -73,7 +73,7 @@
       <div class="card p-6 sm:p-8 shadow-soft">
         <header class="mb-6">
           <h1 class="text-2xl font-semibold">Te damos la bienvenida</h1>
-          <p class="text-white/60 text-sm mt-1">Ingresá con tu email y contraseña.</p>
+          <p class="text-white/60 text-sm mt-1">Ingresá con tu usuario y contraseña.</p>
         </header>
 
         <!-- mensajes de Django -->
@@ -97,7 +97,7 @@
 
           <!-- Email/username -->
           <label class="block">
-            <span class="text-xs text-white/70">Email</span>
+            <span class="text-xs text-white/70">Usuario</span>
             <input
               type="text" name="username" autocomplete="username" required
               value="{{ form.username.value|default:'' }}"

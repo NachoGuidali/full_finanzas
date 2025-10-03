@@ -71,12 +71,7 @@
       
     </div>
 
-    <!-- accesos secundarios (lo que ya tenías) -->
-    <div class="mt-4 flex flex-wrap gap-3 text-sm">
-      <a href="{% url 'exportar_movimientos_usuario' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">📥 Exportar movimientos</a>
-      <a href="{% url 'comprobantes' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">🧾 Comprobantes</a>
-      <a href="{% url 'logout' %}" class="rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5">🚪 Cerrar sesión</a>
-    </div>
+    
   </section>
 
 
@@ -86,7 +81,7 @@
     <h3 class="text-lg font-semibold mb-4">Ultimos movimientos</h3>
     <div class="overflow-x-auto card p-0">
       <table class="w-full border-collapse text-sm">
-        <thead class="bg-white/5 text-white/80">
+        <thead class="bg-white/5 text-gray">
           <tr>
             <th class="px-3 py-2 text-left">Fecha</th>
             <th class="px-3 py-2 text-left">Tipo</th>

@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+import requests
+import time
+import json
+
+BASE_URL = "https://apis.datos.gob.ar/georef/api"
+
+def get_json(endpoint, params=None, retries=3, delay=1):
+    url = f"{BASE_URL}/{endpoint}"
+    for i in range(retries):
+        resp = requests.get(url, params=params)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            print(f"⚠️ Error {resp.status_code} en intento {i+1}, reintentando...")
+            time.sleep(delay)
+    resp.raise_for_status()
+
+def fetch_localidades_for_provincia(prov_id, prov_nombre):
+    localidades = []
+    offset = 0
+    max_results = 500
+
+    while True:
+        params = {
+            "provincia.id": prov_id,   # 👈 ahora siempre con ID
+            "max": max_results,
+            "offset": offset
+        }
+        data = get_json("localidades", params=params)
+        locs = data.get("localidades", [])
+        localidades.extend(locs)
+
+        if len(locs) < max_results:
+            break
+        offset += max_results
+
+    print(f"✅ {prov_nombre}: {len(localidades)} localidades descargadas")
+    return localidades
+
+def build_json_all_provincias():
+    provincias_data = get_json("provincias")
+    provincias = provincias_data.get("provincias", [])
+
+    all_data = {}
+    for prov in provincias:
+        prov_id = prov["id"]
+        prov_nombre = prov["nombre"]
+
+        print(f"\n-> Procesando provincia: {prov_nombre} (id={prov_id})")
+
+        locs = fetch_localidades_for_provincia(prov_id, prov_nombre)
+        all_data[prov_nombre] = locs
+
+    return all_data
+
+if __name__ == "__main__":
+    print("🚀 Descargando todas las provincias y localidades...")
+    data = build_json_all_provincias()
+
+    with open("localidades.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    print("\n🎉 Archivo 'localidades.json' generado correctamente.")

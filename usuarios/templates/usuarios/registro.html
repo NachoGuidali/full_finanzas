@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-  /* Campos del formulario de registro en modo claro (texto negro) */
+  /* Campos en modo claro dentro del form */
   #formRegistro input[type="text"],
   #formRegistro input[type="email"],
   #formRegistro input[type="password"],
@@ -13,44 +13,34 @@
   #formRegistro input[type="number"],
   #formRegistro input[type="file"],
   #formRegistro select,
-  #formRegistro textarea {
-    color: #0a0a0a !important;         /* texto negro */
-    background: #ffffff !important;     /* fondo blanco para contraste */
-    caret-color: #000;                  /* cursor negro */
-  }
-
-  /* Placeholders legibles */
-  #formRegistro input::placeholder,
-  #formRegistro textarea::placeholder {
-    color: #6b7280; /* gris 500 */
-    opacity: 0.95;
-  }
-
-  /* Estados disabled/readonly con contraste correcto */
-  #formRegistro input[readonly],
-  #formRegistro select:disabled,
-  #formRegistro input:disabled,
-  #formRegistro textarea:disabled {
-    background: #f3f4f6 !important; /* gris 100 */
-    color: #111827 !important;      /* gris 900 */
-  }
+  #formRegistro textarea { color:#0a0a0a!important; background:#fff!important; caret-color:#000; }
+  #formRegistro input::placeholder, #formRegistro textarea::placeholder { color:#6b7280; opacity:.95; }
+  #formRegistro input[readonly], #formRegistro select:disabled, #formRegistro input:disabled, #formRegistro textarea:disabled { background:#f3f4f6!important; color:#111827!important; }
 </style>
 
 <section class="max-w-3xl mx-auto px-4 py-8">
-  <!-- Header -->
   <header class="card p-5 mb-6">
     <h1 class="text-2xl sm:text-3xl font-extrabold">Crear cuenta</h1>
     <p class="text-white/70">Completá tus datos para validar tu identidad.</p>
   </header>
 
-  {# Errores no asociados a campos #}
+  {% if form.errors %}
+  <div class="card p-4 mb-6 border border-red-500/40 bg-red-500/10 text-sm">
+    <h4 class="font-semibold mb-1">Revisá estos campos</h4>
+    <ul class="list-disc ml-5">
+      {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
+      {% for field in form %}
+        {% if field.errors %}<li><b>{{ field.label }}:</b> {{ field.errors.0 }}</li>{% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   {% if form.non_field_errors %}
     <div class="card p-4 mb-6 border border-red-500/40 bg-red-500/10 text-sm">
       <h4 class="font-semibold mb-1">No pudimos crear tu cuenta</h4>
       <ul class="list-disc ml-5">
-        {% for e in form.non_field_errors %}
-          <li>{{ e }}</li>
-        {% endfor %}
+        {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
       </ul>
     </div>
   {% endif %}
@@ -58,34 +48,12 @@
   <!-- Stepper -->
   <div class="card p-4 mb-6">
     <ol class="grid grid-cols-4 gap-2 text-sm">
-      <li class="step-item" data-step-index="1">
-        <div class="flex items-center gap-2">
-          <span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">1</span>
-          <span>Credenciales</span>
-        </div>
-      </li>
-      <li class="step-item" data-step-index="2">
-        <div class="flex items-center gap-2">
-          <span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">2</span>
-          <span>Datos personales</span>
-        </div>
-      </li>
-      <li class="step-item" data-step-index="3">
-        <div class="flex items-center gap-2">
-          <span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">3</span>
-          <span>Domicilio</span>
-        </div>
-      </li>
-      <li class="step-item" data-step-index="4">
-        <div class="flex items-center gap-2">
-          <span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">4</span>
-          <span>KYC</span>
-        </div>
-      </li>
+      <li class="step-item" data-step-index="1"><div class="flex items-center gap-2"><span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">1</span><span>Credenciales</span></div></li>
+      <li class="step-item" data-step-index="2"><div class="flex items-center gap-2"><span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">2</span><span>Datos personales</span></div></li>
+      <li class="step-item" data-step-index="3"><div class="flex items-center gap-2"><span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">3</span><span>Domicilio</span></div></li>
+      <li class="step-item" data-step-index="4"><div class="flex items-center gap-2"><span class="step-dot h-6 w-6 rounded-full flex items-center justify-center border border-white/20">4</span><span>KYC</span></div></li>
     </ol>
-    <div class="mt-3 h-1 w-full bg-white/10 rounded">
-      <div id="step-progress" class="h-1 bg-neon rounded transition-all" style="width:25%"></div>
-    </div>
+    <div class="mt-3 h-1 w-full bg-white/10 rounded"><div id="step-progress" class="h-1 bg-neon rounded transition-all" style="width:25%"></div></div>
   </div>
 
   <!-- FORM -->
@@ -99,21 +67,28 @@
         <label class="block">
           <span class="text-xs text-white/60 mb-1 block">Usuario</span>
           {{ form.username }}
+          <p class="mt-1 text-xs text-white/60">Solo <b>letras, números y guión bajo</b>; <b>sin espacios</b>. 4–20 caracteres (ej: <code>franco_molina</code>).</p>
           {% if form.username.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.username.errors.0 }}</p>{% endif %}
         </label>
+
         <label class="block">
           <span class="text-xs text-white/60 mb-1 block">Email</span>
           {{ form.email }}
+          <p class="mt-1 text-xs text-white/60">Usá un correo válido al que tengas acceso. Te vamos a enviar verificaciones.</p>
           {% if form.email.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.email.errors.0 }}</p>{% endif %}
         </label>
+
         <label class="block">
           <span class="text-xs text-white/60 mb-1 block">Contraseña</span>
           {{ form.password1 }}
+          <p class="mt-1 text-xs text-white/60">Mínimo <b>8</b> caracteres y debe <b>combinar letras y números</b>. Evitá usar datos obvios.</p>
           {% if form.password1.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.password1.errors.0 }}</p>{% endif %}
         </label>
+
         <label class="block">
           <span class="text-xs text-white/60 mb-1 block">Confirmar</span>
           {{ form.password2 }}
+          <p class="mt-1 text-xs text-white/60">Repetí la misma contraseña.</p>
           {% if form.password2.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.password2.errors.0 }}</p>{% endif %}
         </label>
       </div>
@@ -132,8 +107,18 @@
         <label class="block"><span class="text-xs text-white/60 mb-1 block">Fecha de nacimiento</span> {{ form.fecha_nacimiento }} {% if form.fecha_nacimiento.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.fecha_nacimiento.errors.0 }}</p>{% endif %}</label>
         <label class="block"><span class="text-xs text-white/60 mb-1 block">Lugar de nacimiento</span> {{ form.lugar_nacimiento }} {% if form.lugar_nacimiento.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.lugar_nacimiento.errors.0 }}</p>{% endif %}</label>
         <label class="block"><span class="text-xs text-white/60 mb-1 block">Tipo de documento</span> {{ form.doc_tipo }} {% if form.doc_tipo.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.doc_tipo.errors.0 }}</p>{% endif %}</label>
-        <label class="block"><span class="text-xs text-white/60 mb-1 block">N° de documento</span> {{ form.doc_nro }} {% if form.doc_nro.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.doc_nro.errors.0 }}</p>{% endif %}</label>
-        <label class="block sm:col-span-2"><span class="text-xs text-white/60 mb-1 block">Teléfono</span> {{ form.telefono }} {% if form.telefono.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.telefono.errors.0 }}</p>{% endif %}</label>
+        <label class="block">
+          <span class="text-xs text-white/60 mb-1 block">N° de documento</span>
+          {{ form.doc_nro }}
+          <p class="mt-1 text-xs text-white/60">Solo números. DNI/Documento argentino suele tener <b>7 u 8 dígitos</b>.</p>
+          {% if form.doc_nro.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.doc_nro.errors.0 }}</p>{% endif %}
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="text-xs text-white/60 mb-1 block">Teléfono</span>
+          {{ form.telefono }}
+          <p class="mt-1 text-xs text-white/60">Formato: <b>1122334455</b> (10 u 11 dígitos, sin +, 0, espacios ni guiones).</p>
+          {% if form.telefono.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.telefono.errors.0 }}</p>{% endif %}
+        </label>
       </div>
     </section>
 
@@ -168,17 +153,18 @@
         <label class="block">
           <span class="block text-xs text-white/60 mb-1">DNI (frente)</span>
           {{ form.dni_frente }}
+          <p class="mt-1 text-xs text-white/60">Formatos: <b>JPG/PNG/WebP</b>. Tamaño máx: <b>5MB</b>.</p>
           {% if form.dni_frente.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.dni_frente.errors.0 }}</p>{% endif %}
         </label>
         <label class="block">
           <span class="block text-xs text-white/60 mb-1">DNI (dorso)</span>
           {{ form.dni_dorso }}
+          <p class="mt-1 text-xs text-white/60">Formatos: <b>JPG/PNG/WebP</b>. Tamaño máx: <b>5MB</b>.</p>
           {% if form.dni_dorso.errors %}<p class="mt-1 text-xs text-rose-400">{{ form.dni_dorso.errors.0 }}</p>{% endif %}
         </label>
       </div>
     </section>
 
-    <!-- Navegación -->
     <div class="flex items-center justify-between pt-2">
       <a href="{% url 'login' %}" class="text-sm text-white/70 hover:text-white">¿Ya tenés cuenta? Iniciar sesión</a>
       <div class="flex gap-2">
@@ -236,7 +222,6 @@
     input.parentElement.appendChild(p);
   }
 
-  // ---- Validación por paso (cliente) ----
   function validateStepClient(s=step){
     if (s===1){
       const u = $('#id_username'), e = $('#id_email'), p1 = $('#id_password1'), p2 = $('#id_password2');
@@ -262,7 +247,6 @@
     return true;
   }
 
-  // Validar TODO (para click en "Crear cuenta")
   function validateAllSteps(){
     for (let s=1; s<=LAST; s++){
       if (!validateStepClient(s)) return { ok:false, firstBad:s };
@@ -271,95 +255,74 @@
   }
 
   // ---- Navegación ----
-  $('#btnNext')?.addEventListener('click', ()=>{
-    if (!validateStepClient()){ return; }
-    showStep(step+1);
-  });
+  $('#btnNext')?.addEventListener('click', ()=>{ if (!validateStepClient()) return; showStep(step+1); });
   $('#btnPrev')?.addEventListener('click', ()=>showStep(step-1));
-
-  // ---- Submit forzado (bypassa validación HTML5) ----
   $('#btnSubmit')?.addEventListener('click', (e)=>{
     e.preventDefault();
     const res = validateAllSteps();
     if (!res.ok){
       showStep(res.firstBad);
-      // foco al primer input de ese step
       const sec = document.querySelector(`[data-step="${res.firstBad}"]`);
-      const first = sec?.querySelector('input, select, textarea');
-      first && first.focus();
+      const first = sec?.querySelector('input, select, textarea'); first && first.focus();
       return;
     }
-    // asegurar selects habilitados (por si quedaron disabled por UX)
-    const selProv = $('#id_provincia');
-    const selLoc  = $('#id_localidad');
-    selProv && (selProv.disabled=false);
-    selLoc  && (selLoc.disabled=false);
-    // enviar sin validación nativa del navegador
+    const selProv = $('#id_provincia'); const selLoc = $('#id_localidad');
+    selProv && (selProv.disabled=false); selLoc && (selLoc.disabled=false);
     form.submit();
   });
 
-  // ---- Geo dependientes ----
-  const selPais = $('#id_pais');
-  const selProv = $('#id_provincia');
-  const selLoc  = $('#id_localidad');
-
-  async function fetchJson(url){
-    const r = await fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' }});
-    if (!r.ok) throw new Error('HTTP '+r.status);
-    return r.json();
-  }
+  // ---- Geo dependientes (ajax) ----
+  const selPais = $('#id_pais'), selProv = $('#id_provincia'), selLoc  = $('#id_localidad');
+  async function fetchJson(url){ const r=await fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   function fillSelect(selectEl, items, getVal='id', getText='nombre', placeholder){
     if (!selectEl) return;
     const current = selectEl.value || '';
     selectEl.innerHTML = '';
     if (placeholder){
-      const ph = document.createElement('option');
-      ph.value = ''; ph.textContent = placeholder; ph.disabled = true; ph.selected = !current;
+      const ph = document.createElement('option'); ph.value=''; ph.textContent=placeholder; ph.disabled=true; ph.selected=!current;
       selectEl.appendChild(ph);
     }
-    items.forEach(it=>{
-      const opt = document.createElement('option');
-      opt.value = it[getVal];
-      opt.textContent = it[getText];
-      selectEl.appendChild(opt);
-    });
-    // mantener selección previa si existe
+    items.forEach(it=>{ const opt=document.createElement('option'); opt.value=it[getVal]; opt.textContent=it[getText]; selectEl.appendChild(opt); });
     const exists = Array.from(selectEl.options).some(o=>o.value===current);
     if (exists) selectEl.value = current;
     selectEl.disabled = false;
   }
-
   async function loadProvincias(paisId){
     if (!selProv) return;
-    selProv.disabled = true;
-    if (selLoc){ selLoc.disabled = true; selLoc.innerHTML = ''; }
+    selProv.disabled = true; if (selLoc){ selLoc.disabled = true; selLoc.innerHTML = ''; }
     if (!paisId) { selProv.innerHTML=''; return; }
-    try {
-      const data = await fetchJson("{% url 'geo_provincias' %}?pais_id="+encodeURIComponent(paisId));
-      fillSelect(selProv, data.provincias || [], 'id','nombre', 'Seleccioná provincia');
-      // si ya había una provincia set, disparar carga de localidades
-      selProv.dispatchEvent(new Event('change'));
+    try { const data = await fetchJson("{% url 'geo_provincias' %}?pais_id="+encodeURIComponent(paisId));
+      fillSelect(selProv, data.provincias||[], 'id','nombre', 'Seleccioná provincia'); selProv.dispatchEvent(new Event('change'));
     } catch(e){ console.error('geo_provincias:', e); }
   }
   async function loadLocalidades(provId){
-    if (!selLoc) return;
-    selLoc.disabled = true;
-    if (!provId) { selLoc.innerHTML=''; return; }
-    try {
-      const data = await fetchJson("{% url 'geo_localidades' %}?provincia_id="+encodeURIComponent(provId));
-      fillSelect(selLoc, data.localidades || [], 'id','nombre', 'Seleccioná localidad');
+    if (!selLoc) return; selLoc.disabled = true; if (!provId) { selLoc.innerHTML=''; return; }
+    try { const data = await fetchJson("{% url 'geo_localidades' %}?provincia_id="+encodeURIComponent(provId));
+      fillSelect(selLoc, data.localidades||[], 'id','nombre', 'Seleccioná localidad');
     } catch(e){ console.error('geo_localidades:', e); }
   }
-
   selPais?.addEventListener('change', ()=> loadProvincias(selPais.value));
   selProv?.addEventListener('change', ()=> loadLocalidades(selProv.value));
+  (function initGeo(){ if (selPais && selPais.value){ loadProvincias(selPais.value); } })();
 
-  // Carga inicial si ya hay país seleccionado
-  (function initGeo(){
-    if (selPais && selPais.value){ loadProvincias(selPais.value); }
+  // ---- Reglas de entrada (patrones HTML) ----
+  (function addInputPatterns(){
+    const u = $('#id_username');
+    if (u){ u.setAttribute('pattern','^[A-Za-z0-9_]{4,20}$'); u.setAttribute('title','Solo letras, números y _ (4–20).'); u.maxLength = 20; }
+    const p1 = $('#id_password1');
+    if (p1){ p1.setAttribute('pattern','(?=.*[A-Za-z])(?=.*\\d).{8,}'); p1.setAttribute('title','Mínimo 8, combinar letras y números'); }
+    const tel = $('#id_telefono');
+    if (tel){ tel.setAttribute('pattern','^\\d{10,11}$'); tel.setAttribute('inputmode','numeric'); tel.setAttribute('title','10 u 11 dígitos, sin + ni espacios (ej: 1122334455)'); }
+    const dni = $('#id_doc_nro');
+    if (dni){ dni.setAttribute('pattern','^\\d{7,9}$'); dni.setAttribute('inputmode','numeric'); dni.setAttribute('title','Solo números (7–9 dígitos)'); }
+    const fr = $('#id_dni_frente'), dr = $('#id_dni_dorso');
+    [fr,dr].forEach(f => {
+      if (!f) return;
+      f.setAttribute('accept','image/jpeg,image/png,image/webp');
+    });
   })();
 
-  // ---- Abrir step con error servidor (si lo hay) ----
+  // ---- Abrir step con error del servidor (si lo hay) ----
   (function jumpToFirstServerError(){
     let target = document.querySelector('[aria-invalid="true"]') || document.querySelector('.text-rose-400');
     if (!target) return;

@@ -27,20 +27,28 @@ class RegistroUsuarioForm(UserCreationForm):
     # Identidad
     first_name = forms.CharField(label="Nombre", required=True)
     last_name  = forms.CharField(label="Apellido", required=True)
-    persona_tipo     = forms.ChoiceField(label="Tipo de persona", choices=PERSONA_TIPO, initial="FISICA")
-    doc_tipo   = forms.ChoiceField(label="Tipo de documento", choices=DOC_TIPOS, initial='DNI')
+    persona_tipo = forms.ChoiceField(label="Tipo de persona", choices=Usuario._meta.get_field("persona_tipo").choices, initial="FISICA")
+    doc_tipo = forms.ChoiceField(
+    label="Tipo de documento",
+    choices=DOC_TIPOS,
+    initial='DNI'
+)
     doc_nro    = forms.CharField(label="N° de documento", required=True, validators=[dni_val])
 
-    estado_civil = forms.ChoiceField(label="Estado civil", choices=ESTADO_CIVIL, required=False)
-    sexo         = forms.ChoiceField(label="Sexo", choices=SEXO_CHOICES, required=False)
+    estado_civil = forms.ChoiceField(label="Estado civil", choices=Usuario._meta.get_field("estado_civil").choices, required=False)
+    sexo         = forms.ChoiceField(label="Sexo", choices=Usuario._meta.get_field("sexo").choices, required=False)
     nacionalidad = forms.CharField(label="Nacionalidad", required=True)
-    fecha_nacimiento = forms.DateField(label="Fecha de nacimiento", required=True, widget=forms.DateInput(attrs={"type":"date"}))
+    fecha_nacimiento = forms.DateField(
+        label="Fecha de nacimiento",
+        required=True,
+        widget=forms.DateInput(attrs={"type": "date"})
+    )
     lugar_nacimiento = forms.CharField(label="Lugar de nacimiento", required=True)
 
     # Contacto
     telefono  = forms.CharField(label="Teléfono", required=True, validators=[telefono_val])
 
-    # Domicilio estructurado
+    # Domicilio
     pais      = forms.ModelChoiceField(label="País", queryset=Pais.objects.all(), required=True)
     provincia = forms.ModelChoiceField(label="Provincia", queryset=Provincia.objects.none(), required=True)
     localidad = forms.ModelChoiceField(label="Localidad", queryset=Localidad.objects.none(), required=True)
@@ -50,15 +58,11 @@ class RegistroUsuarioForm(UserCreationForm):
     piso          = forms.CharField(label="Piso", required=False, max_length=16)
     depto         = forms.CharField(label="Depto", required=False, max_length=16)
 
-    # KYC imágenes (obligatorio)
+    # KYC imágenes
     dni_frente = forms.ImageField(label="DNI (frente)", required=True)
     dni_dorso  = forms.ImageField(label="DNI (dorso)",  required=True)
 
-    acepta_tyc = forms.BooleanField(
-    label="Acepto los Términos y Condiciones",
-    required=True
-    )
-
+    acepta_tyc = forms.BooleanField(label="Acepto los Términos y Condiciones", required=True)
 
     class Meta(UserCreationForm.Meta):
         model = Usuario
@@ -75,50 +79,44 @@ class RegistroUsuarioForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Estilo base (ink + neon)
+        # 🎨 Estilos
         base = "w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-white placeholder-white/50"
         select_base = base + " pr-8"
         file_base = "w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-white " \
                     "file:mr-3 file:rounded file:border-0 file:bg-neon file:text-black file:px-3 file:py-1.5"
         checkbox_base = "h-4 w-4 rounded border-white/20 bg-ink text-neon focus:ring-neon"
-        if self.errors:
-            for name in self.errors:
-                if name in self.fields:
-                    cls = self.fields[name].widget.attrs.get("class", "")
-                    self.fields[name].widget.attrs["class"] = f"{cls} ring-2 ring-red-500/70 focus:ring-red-500".strip()
-                    self.fields[name].widget.attrs["aria-invalid"] = "true"
 
-                    
         for name, field in self.fields.items():
             classes = field.widget.attrs.get("class", "")
-            # tipo por widget
-            if field.widget.__class__.__name__ in ("Select", "SelectMultiple"):
+            if field.widget.__class__.__name__ in ("Select","SelectMultiple"):
                 field.widget.attrs["class"] = f"{classes} {select_base}".strip()
-            elif field.widget.__class__.__name__ in ("ClearableFileInput", "FileInput"):
+            elif field.widget.__class__.__name__ in ("ClearableFileInput","FileInput"):
                 field.widget.attrs["class"] = f"{classes} {file_base}".strip()
             elif field.widget.__class__.__name__ in ("CheckboxInput",):
                 field.widget.attrs["class"] = f"{classes} {checkbox_base}".strip()
             else:
                 field.widget.attrs["class"] = f"{classes} {base}".strip()
 
-        # Inicializar dependientes si hay datos posteados (para no perder selección)
-        if "pais" in self.data:
-            try:
-                pais_id = int(self.data.get("pais"))
-                self.fields["provincia"].queryset = Provincia.objects.filter(pais_id=pais_id).order_by("nombre")
-            except (TypeError, ValueError):
-                self.fields["provincia"].queryset = Provincia.objects.none()
-        elif self.instance.pk and self.instance.pais:
-            self.fields["provincia"].queryset = Provincia.objects.filter(pais=self.instance.pais)
+        # Cascada dependiente
+        pais_val = self.data.get("pais") or (self.instance.pais_id if self.instance.pk else None)
+        prov_val = self.data.get("provincia") or (self.instance.provincia_id if self.instance.pk else None)
+        loc_val  = self.data.get("localidad") or (self.instance.localidad_id if self.instance.pk else None)
 
-        if "provincia" in self.data:
-            try:
-                prov_id = int(self.data.get("provincia"))
-                self.fields["localidad"].queryset = Localidad.objects.filter(provincia_id=prov_id).order_by("nombre")
-            except (TypeError, ValueError):
-                self.fields["localidad"].queryset = Localidad.objects.none()
-        elif self.instance.pk and self.instance.provincia:
-            self.fields["localidad"].queryset = Localidad.objects.filter(provincia=self.instance.provincia)
+        # Provincias
+        if pais_val:
+            self.fields["provincia"].queryset = Provincia.objects.filter(pais_id=pais_val).order_by("nombre")
+        elif prov_val:
+            self.fields["provincia"].queryset = Provincia.objects.filter(id=prov_val)
+        else:
+            self.fields["provincia"].queryset = Provincia.objects.none()
+
+        # Localidades
+        if prov_val:
+            self.fields["localidad"].queryset = Localidad.objects.filter(provincia_id=prov_val).order_by("nombre")
+        elif loc_val:
+            self.fields["localidad"].queryset = Localidad.objects.filter(id=loc_val)
+        else:
+            self.fields["localidad"].queryset = Localidad.objects.none()
 
         # Autocomplete
         self.fields["username"].widget.attrs["autocomplete"] = "username"
@@ -126,65 +124,77 @@ class RegistroUsuarioForm(UserCreationForm):
         self.fields["password1"].widget.attrs["autocomplete"] = "new-password"
         self.fields["password2"].widget.attrs["autocomplete"] = "new-password"
 
-
+    # 📧 Validar email
     def clean_email(self):
         email = self.cleaned_data.get("email")
         if email and Usuario.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Este email ya está registrado.")
         return email
 
+    # 🎂 Validar fecha de nacimiento
     def clean_fecha_nacimiento(self):
         fn = self.cleaned_data["fecha_nacimiento"]
-        # Mayor de 18
         hoy = date.today()
-        mayoria = date(hoy.year-18, hoy.month, hoy.day)
+        mayoria = date(hoy.year - 18, hoy.month, hoy.day)
         if fn > mayoria:
             raise forms.ValidationError("Debés ser mayor de 18 años.")
-        # Sano: no más de 120 años
         if fn < hoy - timedelta(days=120*365):
             raise forms.ValidationError("Fecha de nacimiento inválida.")
         return fn
 
+    # 🧭 Validar coherencia país/provincia/localidad
+    def clean(self):
+        cleaned = super().clean()
+        pais = cleaned.get("pais")
+        prov = cleaned.get("provincia")
+        loc  = cleaned.get("localidad")
+
+        if prov and pais and prov.pais_id != pais.id:
+            self.add_error("provincia", "La provincia no corresponde al país seleccionado.")
+        if loc and prov and loc.provincia_id != prov.id:
+            self.add_error("localidad", "La localidad no corresponde a la provincia seleccionada.")
+
+        return cleaned
+
     def save(self, commit=True):
         user = super().save(commit=False)
-
-        # Estado KYC inicial
         user.estado_verificacion = 'pendiente'
         user.is_active = True
 
-        # Campos extra
+        # Campos adicionales
         user.doc_tipo = self.cleaned_data["doc_tipo"]
         user.doc_nro  = self.cleaned_data["doc_nro"]
-
-        user.persona_tipo     = self.cleaned_data["persona_tipo"]
-        user.estado_civil     = self.cleaned_data.get("estado_civil", "")
-        user.sexo             = self.cleaned_data.get("sexo", "")
-        user.nacionalidad     = self.cleaned_data["nacionalidad"]
+        user.persona_tipo = self.cleaned_data["persona_tipo"]
+        user.estado_civil = self.cleaned_data.get("estado_civil", "")
+        user.sexo         = self.cleaned_data.get("sexo", "")
+        user.nacionalidad = self.cleaned_data["nacionalidad"]
         user.fecha_nacimiento = self.cleaned_data["fecha_nacimiento"]
         user.lugar_nacimiento = self.cleaned_data["lugar_nacimiento"]
-
         user.telefono = self.cleaned_data["telefono"]
 
-        user.pais          = self.cleaned_data["pais"]
-        user.provincia     = self.cleaned_data["provincia"]
-        user.localidad     = self.cleaned_data["localidad"]
+        # Domicilio
+        user.pais = self.cleaned_data["pais"]
+        user.provincia = self.cleaned_data["provincia"]
+        user.localidad = self.cleaned_data["localidad"]
         user.codigo_postal = self.cleaned_data["codigo_postal"]
         user.calle         = self.cleaned_data["calle"]
         user.numero_calle  = self.cleaned_data["numero_calle"]
         user.piso          = self.cleaned_data.get("piso", "")
         user.depto         = self.cleaned_data.get("depto", "")
 
+        # Documentos
         user.dni_frente = self.cleaned_data["dni_frente"]
         user.dni_dorso  = self.cleaned_data["dni_dorso"]
 
+        # Términos y condiciones
         if self.cleaned_data.get("acepta_tyc"):
             user.tyc_aceptado = True
             user.tyc_version = getattr(settings, "TYC_VERSION", "")
             user.tyc_aceptado_en = timezone.now()
+
         if commit:
             user.save()
         return user
-    
 
 
 class DepositoARSForm(forms.ModelForm):

@@ -1,4 +1,4 @@
-# usuarios/services/boletos.py
+
 import io, qrcode, base64, hashlib, uuid
 from django.template.loader import render_to_string
 from django.conf import settings
