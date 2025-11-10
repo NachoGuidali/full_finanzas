@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from django.conf import settings
 from django.utils import timezone
 from .models import Usuario, Pais, Provincia, Localidad, PERSONA_TIPO, ESTADO_CIVIL, SEXO_CHOICES, SupportTicket
+from django.contrib.auth.forms import AuthenticationForm
 
 DOC_TIPOS = (('DNI','DNI'), ('PAS','Pasaporte'), ('CE','Cédula/CE'))
 
@@ -222,3 +223,10 @@ class SupportTicketForm(forms.ModelForm):
             "mensaje":   forms.Textarea(attrs={"rows":5,"class":"w-full rounded-md border border-white/10 bg-white/90 text-black px-3 py-2"}),
             "adjunto":   forms.ClearableFileInput(attrs={"class":"w-full rounded-md border border-white/10 bg-white/90 text-black px-3 py-2"}),
         }        
+
+
+class EmailOrUsernameAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(
+        label="Email o usuario",
+        widget=forms.TextInput(attrs={"autofocus": True, "placeholder": "tu@email.com o usuario"})
+    )        

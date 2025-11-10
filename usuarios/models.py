@@ -125,6 +125,12 @@ class Usuario(AbstractUser):
     tyc_version     = models.CharField(max_length=20, blank=True)
     tyc_aceptado_en = models.DateTimeField(null=True, blank=True)
 
+    #confirmacion de email
+    email_confirmed = models.BooleanField(default=False)
+    email_confirmed_at = models.DateTimeField(null=True, blank=True)
+    email_confirm_sent_at = models.DateTimeField(null=True, blank=True)
+
+
     def __str__(self):
         return self.username
 
@@ -251,6 +257,11 @@ class Cotizacion(models.Model):
     venta = models.DecimalField(max_digits=20, decimal_places=2)   
     fecha = models.DateTimeField(auto_now_add=True)
 
+    ref_compra = models.DecimalField(max_digits=20, decimal_places=6, null=True, blank=True)
+    ref_venta  = models.DecimalField(max_digits=20, decimal_places=6, null=True, blank=True)
+
+    margin_bps = models.IntegerField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.moneda} - Compra: {self.compra} / Venta: {self.venta}"
 
@@ -362,3 +373,91 @@ class SupportTicket(models.Model):
 
     def __str__(self):
         return f"#{self.id} {self.asunto}"        
+    
+
+
+## CONTABILIDAD
+
+class CuentaExchange(models.Model):
+    nombre = models.CharField(max_length=50, default="Exchange", unique=True)
+    saldo_ars  = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    saldo_usdt = models.DecimalField(max_digits=18, decimal_places=6, default=0)
+    saldo_usd  = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    def __str__(self):
+        return self.nombre
+
+
+class ApunteExchange(models.Model):
+    MONEDAS = (("ARS","ARS"),("USDT","USDT"),("USD","USD"))
+
+    # --- Nuevo: para matchear con tus create() ---
+    CATEGORIAS = [
+        ('spread_compra', 'Spread en COMPRA'),
+        ('spread_venta',  'Spread en VENTA'),
+        ('fee_swap',      'Comisión de SWAP'),
+        ('entrada',       'Entrada (depósito acreditado)'),
+        ('salida',        'Salida (retiro enviado)'),
+        ('ajuste',        'Ajuste contable'),
+    ]
+
+    fecha = models.DateTimeField(default=timezone.now)
+
+    # Usuario relacionado (beneficiario u origen del movimiento)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                on_delete=models.SET_NULL)
+
+    # Mantengo tu campo "tipo" para compatibilidad (opcional)
+    TIPO = (
+        ("comision_swap","Comisión SWAP"),
+        ("spread_compra","Spread en COMPRA"),
+        ("spread_venta","Spread en VENTA"),
+        ("ajuste","Ajuste contable"),
+        ("ingreso","Ingreso"),   # por si lo usás en algún reporte
+        ("egreso","Egreso"),
+    )
+    tipo = models.CharField(max_length=30, choices=TIPO, default="ingreso")
+
+    # --- Campos de pricing y categorización (nuevos) ---
+    categoria     = models.CharField(max_length=40, choices=CATEGORIAS, default='ajuste')
+
+    # Moneda y montos (tus nombres + los que usan tus create())
+    moneda        = models.CharField(max_length=10, choices=MONEDAS)
+    monto_moneda  = models.DecimalField(max_digits=20, decimal_places=6)   # alias de 'importe'
+    monto_ars     = models.DecimalField(max_digits=20, decimal_places=2)   # alias de 'importe_ars'
+
+    # Aliases con nombres que tu código ya está usando
+    # (no son fields; se persiste en monto_moneda / monto_ars)
+    @property
+    def importe(self):
+        return self.monto_moneda
+    @importe.setter
+    def importe(self, v):
+        self.monto_moneda = v
+
+    @property
+    def importe_ars(self):
+        return self.monto_ars
+    @importe_ars.setter
+    def importe_ars(self, v):
+        self.monto_ars = v
+
+    # Referencia al movimiento (nuevo)
+    movimiento = models.ForeignKey('usuarios.Movimiento', null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name='apuntes_exchange')
+
+    # Pricing de referencia
+    ref_price     = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)
+    applied_price = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)
+
+    # Bolsa para datos extra (nuevo)
+    extra         = models.JSONField(default=dict, blank=True)
+
+    # Tu campo previo para trazabilidad adicional (lo dejo por compatibilidad)
+    ref_movimiento = models.CharField(max_length=64, blank=True)
+    detalle        = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"{self.fecha:%Y-%m-%d %H:%M} {self.categoria} {self.monto_moneda} {self.moneda}"

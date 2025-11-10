@@ -1,9 +1,11 @@
-from django.urls import path
-from .views import registro, dashboard, panel_admin, cambiar_estado_verificacion, agregar_saldo, panel_depositos, aprobar_deposito, historial_usuario, operar, enviar_retiro, aprobar_retiro, solicitar_retiro, exportar_historial_usuario, exportar_movimientos_admin, exportar_movimientos_usuario, obtener_notificaciones, contar_notificaciones, solicitar_retiro_cripto, aprobar_retiro_cripto, panel_retiros, rechazar_deposito_usdt, aprobar_deposito_usdt, panel_depositos_usdt, depositar_usdt, logout_view, verificar_boleto, comprobantes, descargar_boleto, home, actualizar_perfil, cambiar_email, cambiar_password, soporte, faq, perfil, configuracion, activar_2fa, desactivar_2fa, geo_localidades, geo_provincias, tyc, mis_movimientos, exportar_movimientos, mis_tickets, admin_usuario_perfil, rechazar_retiro_cripto, rechazar_retiro_ars, admin_usuarios_list
+from django.urls import path, reverse_lazy
+from django.contrib.auth import views as auth_views
+from .views import registro, dashboard, panel_admin, cambiar_estado_verificacion, agregar_saldo, panel_depositos, aprobar_deposito, historial_usuario, operar, enviar_retiro, aprobar_retiro, solicitar_retiro, exportar_historial_usuario, exportar_movimientos_admin, exportar_movimientos_usuario, obtener_notificaciones, contar_notificaciones, solicitar_retiro_cripto, aprobar_retiro_cripto, panel_retiros, rechazar_deposito_usdt, aprobar_deposito_usdt, panel_depositos_usdt, depositar_usdt, logout_view, verificar_boleto, comprobantes, descargar_boleto, home, actualizar_perfil, cambiar_email, cambiar_password, soporte, faq, perfil, configuracion, activar_2fa, desactivar_2fa, geo_localidades, geo_provincias, tyc, mis_movimientos, exportar_movimientos, mis_tickets, admin_usuario_perfil, rechazar_retiro_cripto, rechazar_retiro_ars, admin_usuarios_list, exchange_dashboard, exchange_export_csv, verify_email_notice, verify_email, resend_verification, change_email_form, change_email_submit, LoginViewCustom
 from . import views_geo
 
 urlpatterns = [
     path('', home, name='home'),
+    path('login/', LoginViewCustom.as_view(), name='login'),
     path('registro/', registro, name='registro'),
     path('logout/', logout_view, name='logout'),
     path('dashboard/', dashboard, name='dashboard'),
@@ -35,7 +37,9 @@ urlpatterns = [
     path("admin-dashboard/usuario/<int:user_id>/", admin_usuario_perfil, name="admin_usuario_perfil"),
     path("admin-dashboard/usuarios/", admin_usuarios_list, name="admin_usuarios_list"),
     
-
+    path('admin-dashboard/exchange/', exchange_dashboard, name='exchange_dashboard'),
+    path('admin-dashboard/exchange/export.csv', exchange_export_csv, name='exchange_export_csv'),
+    
     path("comprobantes/", comprobantes, name="comprobantes"),
     path("boletos/<str:numero>/", verificar_boleto, name="verificar_boleto"),
     path("boletos/<str:numero>/descargar/", descargar_boleto, name="descargar_boleto"),
@@ -62,6 +66,48 @@ urlpatterns = [
     path("movimientos/exportar/", exportar_movimientos, name="movimientos_exportar"),
 
     path("soporte/mis-tickets/", mis_tickets, name="mis_tickets"),
+    #confirmacion email
+    path('auth/verify-email/', verify_email_notice, name='verify_email_notice'),
+    path('auth/verify/<uidb64>/<token>/', verify_email, name='verify_email'),
+    path('auth/resend-verification/', resend_verification, name='resend_verification'),
+    path('auth/change-email/', change_email_form, name='change_email_form'),
+    path('auth/change-email/submit/', change_email_submit, name='change_email_submit'),
 
+    path(
+        "password-reset/",
+        auth_views.PasswordResetView.as_view(
+            template_name="usuarios/password_reset_form.html",
+            email_template_name="usuarios/password_reset_email.txt",
+            subject_template_name="usuarios/password_reset_subject.txt",
+            success_url=reverse_lazy("password_reset_done"),
+            from_email=None,  # usa DEFAULT_FROM_EMAIL de settings
+        ),
+        name="password_reset",
+    ),
+    # Aviso “te enviamos el mail”
+    path(
+        "password-reset/done/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="usuarios/password_reset_done.html"
+        ),
+        name="password_reset_done",
+    ),
+    # Link del mail (con token)
+    path(
+        "reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="usuarios/password_reset_confirm.html",
+            success_url=reverse_lazy("password_reset_complete"),
+        ),
+        name="password_reset_confirm",
+    ),
+    # Confirmación de contraseña cambiada
+    path(
+        "reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="usuarios/password_reset_complete.html"
+        ),
+        name="password_reset_complete",
+    ),
 
 ]

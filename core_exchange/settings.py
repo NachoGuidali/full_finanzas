@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'usuarios',
     'django_celery_beat',
+    
 ]
 
 MIDDLEWARE = [
@@ -149,9 +150,68 @@ EMPRESA_DOMICILIO = "Av. Cordoba 123, CABA"
 SUPPORT_CONTACTO = "soporte@fullfinanzas.com / +54 11 5555-0000"
 PSAV_LEYENDA = "Francisco Molina - Proveedor de Servicios de Activos Virtuales (PSAV) inscripto bajo el N°16 de la fecha 13 de mayo de 2025 del Registro PSAV – Personas Humanas, en el Registro de Proveedores de Servicios de Activos Virtuales de CNV. Este registro es a los fines del control como Sujeto Obligado ante la Unidad de Información Financiera (UIF) y de todo otro ente regulador facultado a tal efecto, en el marco de sus competencias, y no implica licencia ni supervisión por parte de la COMISIÓN NACIONAL DE VALORES sobre la actividad realizada por el PSAV"  
 
-SWAP_FEE_BPS = 100  # COMISION
+
+# COMISION
+
+SWAP_FEE_BPS = 100  
+SPREAD_BPS_USDT = 200  
+SPREAD_BPS_USD  = 200  
 
 #EMAIL SOPORTE
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # dev
 DEFAULT_FROM_EMAIL = "soporte@fullfinanzas.com"
 SOPORTE_TO = ["soporte@fullfinanzas.com"]  # destinatarios del equipo
+
+
+#tiempo restablecimiento contraseña
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # 24 hs 
+
+#Email verificacion 
+ # email_backend
+DEFAULT_FROM_EMAIL = "Full Finanzas <no-reply@fullfinanzas.com>"
+
+#produccion
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "smtp.sendgrid.net"   # o tu proveedor
+# EMAIL_PORT = 587
+# EMAIL_HOST_USER = "apikey"         # SendGrid example
+# EMAIL_HOST_PASSWORD = "SG.xxxxxx"  # tu API key
+# EMAIL_USE_TLS = True
+# DEFAULT_FROM_EMAIL = "Full Finanzas <no-reply@fullfinanzas.com>"
+
+
+
+TYC_VERSION = "2025"
+
+
+# --------------- seguridad--------------
+
+
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+# CSRF_TRUSTED_ORIGINS = ["https://tu-dominio.com", "https://www.tu-dominio.com"]
+# SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin" #usar este si necesitas que integradores vean el origen
+# SECURE_REFERRER_POLICY = "same-origin" #mas estricto
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# X_FRAME_OPTIONS = "DENY"
+
+
+# CSP (django-csp)
+#INSTALLED_APPS += ["csp"]
+#CSP_DEFAULT_SRC = ("'self'",)
+#CSP_SCRIPT_SRC  = ("'self'", "cdn.jsdelivr.net")  # Chart.js
+#CSP_STYLE_SRC   = ("'self'", "'unsafe-inline'")
+#CSP_IMG_SRC     = ("'self'", "data:")
+#CSP_CONNECT_SRC = ("'self'",)
+
+# INSTALLED_APPS += ["whitenoise.runserver_nostatic"]
+# MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+AUTHENTICATION_BACKENDS = [
+    'usuarios.auth_backends.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

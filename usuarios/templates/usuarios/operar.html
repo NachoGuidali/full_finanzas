@@ -15,7 +15,7 @@
   <div class="relative max-w-7xl mx-auto px-6 py-10">
     <div class="mb-6">
       <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
-        <span class="text-neon">Operaciones</span>
+        <span class="text-accent">Operaciones</span>
       </h1>
     </div>
 
@@ -50,7 +50,7 @@
                   <div class="flex items-center gap-1">
                     <span>📥 Flujo:</span>
                     <span>ARS</span>
-                    <span class="text-neon" aria-hidden="true">→</span>
+                    <span class="text-accent" aria-hidden="true">→</span>
                     <span><b id="compra-sym">—</b></span>
                     <span class="ml-2">Recibirás: <b id="compra-recibe">—</b></span>
                   </div>
@@ -87,7 +87,7 @@
                   <div class="flex items-center gap-1">
                     <span>📤 Flujo:</span>
                     <span><b id="venta-cant">—</b> <span id="venta-sym"></span></span>
-                    <span class="text-neon" aria-hidden="true">→</span>
+                    <span class="text-accent" aria-hidden="true">→</span>
                     <span>ARS</span>
                   </div>
                   <div>💱 Cotización compra: <b id="venta-rate">—</b></div>
@@ -103,7 +103,7 @@
 
           <!-- SWAP -->
           <article class="card p-5 shadow-soft sm:col-span-2">
-            <h2 class="mb-2 text-lg font-semibold">Swap USD <span class="text-neon">⇄</span> USDT</h2>
+            <h2 class="mb-2 text-lg font-semibold">Swap USD <span class="text-accent">⇄</span> USDT</h2>
             <form method="POST" class="space-y-3 op-confirm" onsubmit="this.querySelector('[name=operacion]').value='swap'">
               {% csrf_token %}
               <input type="hidden" name="operacion" value="swap" />
@@ -126,12 +126,12 @@
               <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm" aria-live="polite">
                 <div class="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
                   <div>🔁 Dirección:
-                    <b id="swap-pretty">USD <span class="text-neon" aria-hidden="true">→</span> USDT</b>
+                    <b id="swap-pretty">USD <span class="text-accent" aria-hidden="true">→</span> USDT</b>
                   </div>
                   <div>📤 Origen: <b id="swap-origen">—</b></div>
                   <div>📥 Recibirás: <b id="swap-recibe">—</b></div>
                 </div>
-                <p class="mt-2 text-[12px] text-white-600">Importe neto con comisión. Valores estimados.</p>
+                <p class="mt-2 text-[12px] text-gray-600">Importe neto con comisión. Valores estimados.</p>
                 <p id="swap-warn" class="mt-1 text-[12px] text-red-600 hidden">Saldo insuficiente para el swap.</p>
               </div>
 
@@ -146,8 +146,8 @@
         <div class="card p-5 shadow-soft">
           <h2 class="mb-3 text-lg font-semibold">Ayuda</h2>
           <p class="text-sm text-white-700">
-            Elegí la moneda y el monto. Para <span class="text-neon font-medium">Comprar</span> ingresás ARS; para
-            <span class="text-neon font-medium">Vender</span> ingresás la cantidad de USDT/USD. Confirmá el resumen antes de enviar.
+            Elegí la moneda y el monto. Para <span class="text-accent font-medium">Comprar</span> ingresás ARS; para
+            <span class="text-accent font-medium">Vender</span> ingresás la cantidad de USDT/USD. Confirmá el resumen antes de enviar.
           </p>
         </div>
         <div class="card p-4 shadow-soft">
@@ -270,7 +270,7 @@
       }
 
       // Flecha neon en la dirección:
-      outPretty.innerHTML = `${from} <span class="text-neon" aria-hidden="true">→</span> ${to}`;
+      outPretty.innerHTML = `${from} <span class="text-accent" aria-hidden="true">→</span> ${to}`;
       outOrigen.textContent = fmt(monto) + ' ' + from;
       outRecibe.textContent = fmt(recibe) + ' ' + to;
 

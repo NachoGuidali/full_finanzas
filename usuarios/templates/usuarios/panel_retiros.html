@@ -17,7 +17,7 @@
     <h2 class="text-lg font-semibold">Retiros ARS</h2>
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-black/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Monto</th>
@@ -32,7 +32,7 @@
           {% for retiro in retiros_ars %}
           <tr class="hover:bg-white/5">
             <td class="px-3 py-2">
-              <a href="{% url 'admin_usuario_perfil' retiro.usuario.id %}" class="text-neon hover:underline">
+              <a href="{% url 'admin_usuario_perfil' retiro.usuario.id %}" class="text-accent hover:underline">
                 {{ retiro.usuario.username }}
               </a>
             </td>
@@ -54,6 +54,9 @@
                 {% if retiro.estado == 'pendiente' %}
                 <form method="post" action="{% url 'aprobar_retiro' retiro.id %}">{% csrf_token %}
                   <button class="rounded-md bg-neon text-black px-3 py-1 font-semibold">Aprobar</button>
+                </form>
+                <form method="post" action="{% url 'rechazar_retiro_ars' retiro.id %}">{% csrf_token %}
+                  <button class="rounded-md bg-neon/80 text-black px-3 py-1 font-semibold">Rechazar</button>
                 </form>
                 {% endif %}
                 {% if retiro.estado == 'aprobado' %}
@@ -77,7 +80,7 @@
     <h2 class="text-lg font-semibold">Retiros CRYPTO</h2>
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-black/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Moneda</th>
@@ -91,7 +94,7 @@
           {% for retiro in retiros_crypto %}
           <tr class="hover:bg-white/5">
             <td class="px-3 py-2">
-              <a href="{% url 'admin_usuario_perfil' retiro.usuario.id %}" class="text-neon hover:underline">
+              <a href="{% url 'admin_usuario_perfil' retiro.usuario.id %}" class="text-accent hover:underline">
                 {{ retiro.usuario.username }}
               </a>
             </td>

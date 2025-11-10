@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Cambiar email — Full Finanzas{% endblock %}
+{% block content %}
+<section class="max-w-md mx-auto card p-6 space-y-4">
+  <h1 class="text-2xl font-bold">Cambiar email</h1>
+  <form method="post" action="{% url 'change_email_submit' %}" class="space-y-3">
+    {% csrf_token %}
+    <label class="block">
+      <span class="text-xs text-white/60">Nuevo email</span>
+      <input type="email" name="email" required class="w-full rounded-lg border border-white/10 bg-white text-black px-3 py-2">
+    </label>
+    <button class="rounded-lg bg-neon text-black font-semibold px-4 py-2">Guardar y reenviar</button>
+  </form>
+</section>
+{% endblock %}

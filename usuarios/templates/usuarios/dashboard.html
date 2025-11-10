@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — Exchange{% endblock %}
-{% block meta_description %}Resumen de tu cartera, saldos y actividad reciente.{% endblock %}
+{% block meta_description %}Resumen de tu cartera, saldos, flujos y actividad reciente.{% endblock %}
 
 {% block content %}
 <div class="relative">
-  <!-- 👋 Bienvenida -->
   <h2 class="text-2xl font-semibold mb-6">
-    Bienvenido, <span class="text-neon">{{ request.user.username }}</span>
+    Bienvenido, <span class="text-accent">{{ request.user.username }}</span>
   </h2>
 
-  <!-- 📌 Saldos -->
+  <!-- 📌 Saldos (igual que antes) -->
   <div class="grid gap-4 sm:grid-cols-3 mb-8">
     <div class="card p-5 shadow-soft">
       <p class="text-sm text-white/60">Saldo ARS</p>
@@ -25,63 +24,86 @@
     </div>
   </div>
 
-  <!-- ⚡ Acciones rápidas (estilo de la imagen) -->
+  <div class="grid gap-4 lg:grid-cols-3 mb-6">
+    <!-- Flujos (grande) -->
+    <div class="card p-5 lg:col-span-2">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold">Flujos últimos 30 días (ARS)</h3>
+        <span class="text-xs text-white/60">Ingresos vs Retiros + Neto (precio compra)</span>
+      </div>
+      <canvas id="chart-flujos" height="90"></canvas>
+
+      <!-- KPIs dentro de la misma card (footer) -->
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-6">
+        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+          <p class="text-[11px] text-white/60">Total ingresado (ARS)</p>
+          <p class="mt-1 text-lg font-bold">${{ kpi_total_ingresado|floatformat:2 }}</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+          <p class="text-[11px] text-white/60">Total retirado (ARS)</p>
+          <p class="mt-1 text-lg font-bold">${{ kpi_total_retirado|floatformat:2 }}</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+          <p class="text-[11px] text-white/60">Flujo neto (ARS)</p>
+          <p class="mt-1 text-lg font-bold">${{ kpi_flujo_neto|floatformat:2 }}</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+          <p class="text-[11px] text-white/60">Valor de cartera (ARS)</p>
+          <p class="mt-1 text-lg font-bold">${{ kpi_cartera_ars|floatformat:2 }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Composición en UNIDADES (doughnut) -->
+    <div class="card p-5">
+      <h3 class="text-lg font-semibold mb-3">Tu cartera (unidades)</h3>
+      <canvas id="chart-cartera" height="90"></canvas>
+      <div class="mt-3 text-xs text-white/60">
+        ARS, USDT y USD en su propia unidad. KPIs a la izquierda normalizan a ARS (precio compra).
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones rápidas -->
   <section class="mb-8">
     <h3 class="text-lg font-semibold mb-4">Acciones rápidas</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-     
-      <a href="{% url 'operar' %}"
-         class="group card p-5 hover:bg-white/[0.06] transition shadow-soft">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <a href="{% url 'operar' %}" class="group card p-5 hover:bg-white/5 transition shadow-soft">
         <div class="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 mb-3">
-          <!-- arrow up -->
           <svg class="h-5 w-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
           </svg>
         </div>
         <div class="font-semibold">Operar</div>
-        <p class="text-sm text-white/60">Comprá, vendé y converti tus saldos.</p>
+        <p class="text-sm text-white/60">Comprá, vendé y convertí tus saldos.</p>
       </a>
-
-      
-      <a href="{% url 'operar' %}"
-         class="group card p-5 hover:bg-white/[0.06] transition shadow-soft">
+      <a href="{% url 'operar' %}" class="group card p-5 hover:bg-white/5 transition shadow-soft">
         <div class="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 mb-3">
-          <!-- arrow down -->
           <svg class="h-5 w-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
           </svg>
         </div>
-        <div class="font-semibold">Ingresa Dinero</div>
-        <p class="text-sm text-white/60">Ingresa saldo para empezar a operar</p>
+        <div class="font-semibold">Ingresar dinero</div>
+        <p class="text-sm text-white/60">Cargá saldo para operar.</p>
       </a>
-
-      <a href="{% url 'operar' %}"
-         class="group card p-5 hover:bg-white/[0.06] transition shadow-soft">
+      <a href="{% url 'operar' %}" class="group card p-5 hover:bg-white/5 transition shadow-soft">
         <div class="flex items-center justify-center h-9 w-9 rounded-full bg-white/10 mb-3">
-          
           <svg class="h-5 w-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
           </svg>
         </div>
-        <div class="font-semibold">Solicita un retiro</div>
-        <p class="text-sm text-white/60">Solicita un retiro de tus fondos</p>
+        <div class="font-semibold">Solicitar retiro</div>
+        <p class="text-sm text-white/60">Retirá tus fondos.</p>
       </a>
-
-      
-      
     </div>
-
-    
   </section>
 
-
-
-  <!-- 📜 Historial de movimientos -->
+  <!-- Últimos movimientos -->
   <div>
-    <h3 class="text-lg font-semibold mb-4">Ultimos movimientos</h3>
+    <h3 class="text-lg font-semibold mb-4">Últimos movimientos</h3>
     <div class="overflow-x-auto card p-0">
       <table class="w-full border-collapse text-sm">
-        <thead class="bg-white/5 text-gray">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Fecha</th>
             <th class="px-3 py-2 text-left">Tipo</th>
@@ -95,24 +117,214 @@
         </thead>
         <tbody>
           {% for m in movimientos %}
-            <tr class="hover:bg-white/5">
-              <td class="px-3 py-2">{{ m.fecha }}</td>
-              <td class="px-3 py-2">{{ m.get_tipo_display }}</td>
-              <td class="px-3 py-2">{{ m.moneda }}</td>
-              <td class="px-3 py-2">${{ m.monto }}</td>
-              <td class="px-3 py-2">${{ m.saldo_antes }}</td>
-              <td class="px-3 py-2">${{ m.saldo_despues }}</td>
-              <td class="px-3 py-2">{{ m.descripcion }}</td>
-              <td class="px-3 py-2">{{ m.codigo }}</td>
-            </tr>
+          <tr class="hover:bg-white/5">
+            <td class="px-3 py-2 whitespace-nowrap">{{ m.fecha }}</td>
+            <td class="px-3 py-2">{{ m.get_tipo_display }}</td>
+            <td class="px-3 py-2">{{ m.moneda }}</td>
+            <td class="px-3 py-2">${{ m.monto }}</td>
+            <td class="px-3 py-2">${{ m.saldo_antes }}</td>
+            <td class="px-3 py-2">${{ m.saldo_despues }}</td>
+            <td class="px-3 py-2">{{ m.descripcion }}</td>
+            <td class="px-3 py-2">{{ m.codigo }}</td>
+          </tr>
           {% empty %}
-            <tr>
-              <td colspan="8" class="px-3 py-4 text-center text-white/60">Sin movimientos aún.</td>
-            </tr>
+          <tr>
+            <td colspan="8" class="px-3 py-4 text-center text-white/60">Sin movimientos aún.</td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+{# --- dump seguro de datos como JSON --- #}
+{{ comp_labels|json_script:"compLabels" }}
+{{ comp_units|json_script:"compUnits" }}
+{{ comp_ars|json_script:"compArs" }}
+
+{{ chart_labels|json_script:"chartLabels" }}
+{{ chart_deps|json_script:"chartDeps" }}
+{{ chart_rets|json_script:"chartRets" }}
+{{ chart_net|json_script:"chartNet" }}
+
+<script>
+(function () {
+  // Recupero los arrays desde los <script type="application/json">
+  const compLabels = JSON.parse(document.getElementById('compLabels').textContent);
+  const compUnits  = JSON.parse(document.getElementById('compUnits').textContent);
+  const compArs    = JSON.parse(document.getElementById('compArs').textContent);
+
+  const labels = JSON.parse(document.getElementById('chartLabels').textContent);
+  const dep    = JSON.parse(document.getElementById('chartDeps').textContent);
+  const ret    = JSON.parse(document.getElementById('chartRets').textContent);
+  const net    = JSON.parse(document.getElementById('chartNet').textContent);
+
+  // ----- Doughnut: cartera ponderada a ARS -----
+  const $donut = document.getElementById('chart-cartera');
+  if ($donut && window.Chart) {
+    new Chart($donut, {
+      type: 'doughnut',
+      data: {
+        labels: compLabels,
+        datasets: [{
+          data: compArs,
+          backgroundColor: ['#60a5fa', '#f472b6', '#f59e0b'], // ARS, USDT, USD
+          borderColor: ['#60a5fa', '#f472b6', '#f59e0b'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const i = ctx.dataIndex;
+                const label = compLabels[i];
+                const ars   = compArs[i] || 0;
+                const unit  = compUnits[i] || 0;
+                const ufmt  = Number(unit).toFixed(2);
+                return `${label}: ${ufmt} • $${ars.toFixed(2)} ARS`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ----- Línea: flujos últimos 30 días (ARS, compra) -----
+  const $line = document.getElementById('chart-flujos');
+  if ($line && window.Chart) {
+    new Chart($line, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Ingresos', data: dep, borderWidth: 2, pointRadius: 0 },
+          { label: 'Retiros',  data: ret, borderWidth: 2, pointRadius: 0 },
+          { label: 'Neto',     data: net, borderWidth: 2, pointRadius: 0 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(255,255,255,.07)' } }
+        }
+      }
+    });
+  }
+})();
+</script>
+<script>
+  (function(){
+    const btn    = document.getElementById('btnNotificaciones');
+    const dd     = document.getElementById('dropdownNoti');
+    const lista  = document.getElementById('listaNotiTop');
+    const badge  = document.getElementById('badgeNoti');
+    const limpiar= document.getElementById('limpiarNoti');
+
+    if (!btn || !dd || !lista || !badge) return;
+
+    // --- helpers ---
+    function li(t, time){
+      return `
+        <li class="px-4 py-3 text-sm hover:bg-white/5">
+          <div class="flex items-start gap-2">
+            <span class="mt-0.5 text-neon">●</span>
+            <div>
+              <p>${t}</p>
+              <p class="text-[11px] text-white/50 mt-0.5">${time}</p>
+            </div>
+          </div>
+        </li>`;
+    }
+
+    async function getJSON(url){
+      const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }
+
+    async function actualizarBadge(){
+      try {
+        const data = await getJSON("{% url 'contar_notificaciones' %}");
+        const n = Number(data?.no_leidas || 0);
+        if (n > 0){
+          badge.textContent = n;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      } catch(e){
+        // silencioso
+        // console.error(e);
+      }
+    }
+
+    async function cargarLista(){  // también marca leídas en el server (tu view lo hace)
+      try {
+        const data = await getJSON("{% url 'ajax_obtener_notificaciones' %}");
+        const items = data?.notificaciones || [];
+        if (!items.length){
+          lista.innerHTML = `<li class="px-4 py-3 text-sm text-white/60">Sin notificaciones.</li>`;
+        } else {
+          lista.innerHTML = items.map(n => li(n.mensaje, n.fecha)).join('');
+        }
+        // oculto badge porque acabo de abrir y marcar
+        badge.classList.add('hidden');
+      } catch(e){
+        lista.innerHTML = `<li class="px-4 py-3 text-sm text-rose-400">No se pudieron cargar las notificaciones.</li>`;
+      }
+    }
+
+    // inicial: contador
+    actualizarBadge();
+
+    // polling badge cada 60s
+    setInterval(actualizarBadge, 60000);
+
+    // toggle dropdown
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const wasHidden = dd.classList.contains('hidden');
+      dd.classList.toggle('hidden');
+      btn.setAttribute('aria-expanded', wasHidden ? 'true' : 'false');
+      if (wasHidden) cargarLista(); // si se abre, cargo y marco leídas
+    });
+
+    // cerrar al click fuera
+    document.addEventListener('click', (e)=>{
+      if (!dd.contains(e.target) && !btn.contains(e.target)){
+        dd.classList.add('hidden');
+        btn.setAttribute('aria-expanded','false');
+      }
+    });
+
+    // botón "Limpiar" solo limpia UI (ya están marcadas leídas por la API)
+    limpiar?.addEventListener('click', (e)=>{
+      e.preventDefault();
+      lista.innerHTML = '';
+      badge.classList.add('hidden');
+    });
+
+    // Mantengo tu API pública para push manual desde otras vistas
+    window.FF_addNoti = function(text, time){
+      lista.insertAdjacentHTML('afterbegin', li(text, time || new Date().toLocaleString('es-AR')));
+      // subo contador local y muestro badge (opcional)
+      const n = Number(badge.textContent || 0) + 1;
+      badge.textContent = n;
+      badge.classList.remove('hidden');
+    };
+  })();
+</script>
+
 {% endblock %}

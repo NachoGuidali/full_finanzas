@@ -1,22 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponseRedirect, FileResponse, HttpResponse
-from .forms import RegistroUsuarioForm, DepositoARSForm, DepositoUSDTForm, SupportTicketForm
+from .forms import RegistroUsuarioForm, DepositoARSForm, DepositoUSDTForm, SupportTicketForm, EmailOrUsernameAuthenticationForm
 from django.contrib import messages
 from django.urls import reverse
-from .models import Usuario, DepositoARS, Movimiento, Cotizacion, RetiroARS, Notificacion, RetiroCrypto, DepositoUSDT, BoletoOperacion, Provincia, Localidad, Pais, SupportTicket
+from .models import Usuario, DepositoARS, Movimiento, Cotizacion, RetiroARS, Notificacion, RetiroCrypto, DepositoUSDT, BoletoOperacion, Provincia, Localidad, Pais, SupportTicket, ApunteExchange, CuentaExchange
 from decimal import Decimal, ROUND_DOWN
 from django.views.decorators.http import require_GET, require_POST
 from django.http import JsonResponse
 import logging
 import csv
-from django.db.models import Q
-from datetime import datetime
-from django.utils.timezone import localtime
+from django.db.models.functions import TruncDate, TruncMonth
+from django.db.models import Sum, Case, When, Value, DecimalField, Q, Count, F
+from datetime import datetime, timedelta, date
+from django.utils.timezone import localtime, localdate, now
 from .utils import registrar_movimiento, crear_notificacion, cliente_ctx
 from django.db import transaction
 from django.conf import settings
-from django.contrib.auth import logout, update_session_auth_hash
+from django.contrib.auth import logout, update_session_auth_hash, get_user_model, login
 from usuarios.services.boletos import emitir_boleto
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_date
@@ -26,10 +27,19 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 import uuid
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import smart_str, force_bytes
+from usuarios.services.accounting import (
+    registrar_spread_compra, registrar_spread_venta, registrar_comision_swap
+)
+from django.utils import timezone
+from .utils_email_verify import send_verification_email
+from django.contrib.auth.views import LoginView
 
 
 logger = logging.getLogger(__name__)
-
+User = get_user_model()
 
 # helpers de formato / numeración
 def q2(x): return Decimal(x).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
@@ -40,17 +50,51 @@ def gen_numero_boleto(): return f"BOL-{localtime().strftime('%Y%m%d')}-{uuid.uui
 def home(request):
     return render(request, "home.html")
 
+class LoginViewCustom(LoginView):
+    authentication_form = EmailOrUsernameAuthenticationForm
+    template_name = 'usuarios/login.html'
+
+    def form_valid(self, form):
+        user = form.get_user()
+        # ModelBackend ya bloquea is_active=False, pero podés dar feedback:
+        if not user.is_active:
+            messages.error(self.request, "Tu email no está verificado. Revisá tu bandeja o reenviá el correo.")
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
 #INICIO REGISTRO NUEVO
 
 def registro(request):
     if request.method == 'POST':
         form = RegistroUsuarioForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Registro exitoso. Tu cuenta quedó en verificación.')
-            return redirect('login')
+            # 1) Crear instancia sin guardar para poder setear flags
+            user = form.save(commit=False)
+
+            # 2) Bloquear login hasta verificar email
+            user.is_active = True
+
+            # (Opcional, si usás KYC y estados propios)
+            user.estado_verificacion = 'pendiente'
+
+            # 3) Timestamp de cuándo enviamos el correo (útil para rate-limit reenvíos)
+            user.email_confirm_sent_at = timezone.now()
+
+            # 4) Guardar definitivamente
+            user.save()
+
+            # 5) Enviar email de verificación (PASAR LA INSTANCIA)
+            send_verification_email(request, user)
+
+            # 6) Aviso + redirección a pantalla “revisá tu correo”
+            messages.success(
+                request,
+                'Registro creado. Te enviamos un correo para verificar tu email.'
+            )
+            return redirect('verify_email_notice')
     else:
         form = RegistroUsuarioForm()
+
     return render(request, 'usuarios/registro.html', {'form': form})
 
 
@@ -82,15 +126,144 @@ def logout_view(request):
     messages.success(request, "Sesión cerrada correctamente.")
     return redirect('login')
 
+# @login_required
+# def dashboard(request):
+#     if request.user.estado_verificacion != 'aprobado':
+#         return render(request, 'usuarios/no_verificado.html')
+    
+#     movimientos = Movimiento.objects.filter(usuario=request.user).order_by('-fecha')[:10]
+
+#     cot_usdt = Cotizacion.objects.filter(moneda='USDT').order_by('-fecha').first()
+#     cot_usd = Cotizacion.objects.filter(moneda='USD').order_by('-fecha').first()
+#     notificaciones = Notificacion.objects.filter(usuario=request.user).order_by('-fecha')[:10]
+#     notificaciones_no_leidas = Notificacion.objects.filter(usuario=request.user, leida=False)
+
+#     return render(request, 'usuarios/dashboard.html', {
+#         'movimientos': movimientos,
+#         'cot_usdt': cot_usdt,
+#         'cot_usd': cot_usd,
+#         'notificaciones': notificaciones,
+#         'notificaciones_no_leidas': notificaciones_no_leidas,
+#     })
+
+def _rate_ars(moneda, cot_usd, cot_usdt):
+    """ARS por 1 unidad de moneda (aprox: usamos última cotización)."""
+    if moneda == 'ARS':  return Decimal('1')
+    if moneda == 'USD':  return Decimal(cot_usd.venta or cot_usd.compra or 0)
+    if moneda == 'USDT': return Decimal(cot_usdt.venta or cot_usdt.compra or 0)
+    return Decimal('0')
+
+def _to_ars(monto, moneda, cot_usd, cot_usdt):
+    return Decimal(monto or 0) * _rate_ars(moneda, cot_usd, cot_usdt)
+
+def _rate_ars_compra(moneda, cot_usd, cot_usdt):
+    """
+    ARS por 1 unidad usando SIEMPRE precio de COMPRA (fallback a venta > 0).
+    """
+    if moneda == 'ARS':
+        return Decimal('1')
+    if moneda == 'USD':
+        val = getattr(cot_usd, 'compra', None) or getattr(cot_usd, 'venta', 0)
+        return Decimal(val or 0)
+    if moneda == 'USDT':
+        val = getattr(cot_usdt, 'compra', None) or getattr(cot_usdt, 'venta', 0)
+        return Decimal(val or 0)
+    return Decimal('0')
+
+def _to_ars_compra(monto, moneda, cot_usd, cot_usdt):
+    return Decimal(monto or 0) * _rate_ars_compra(moneda, cot_usd, cot_usdt)
+
 @login_required
 def dashboard(request):
+    if not request.user.email_confirmed:
+        return redirect('verify_email_notice')
     if request.user.estado_verificacion != 'aprobado':
         return render(request, 'usuarios/no_verificado.html')
-    
-    movimientos = Movimiento.objects.filter(usuario=request.user).order_by('-fecha')[:10]
 
     cot_usdt = Cotizacion.objects.filter(moneda='USDT').order_by('-fecha').first()
-    cot_usd = Cotizacion.objects.filter(moneda='USD').order_by('-fecha').first()
+    cot_usd  = Cotizacion.objects.filter(moneda='USD').order_by('-fecha').first()
+    # Placeholders si faltan cotizaciones
+    if not cot_usdt: cot_usdt = type('X', (), {'compra':0,'venta':0})()
+    if not cot_usd:  cot_usd  = type('X', (), {'compra':0,'venta':0})()
+
+    movimientos = Movimiento.objects.filter(usuario=request.user).order_by('-fecha')[:10]
+
+    # KPIs normalizados a ARS con PRECIO COMPRA
+    base_qs = Movimiento.objects.filter(usuario=request.user)
+
+    total_ingresado_ars = Decimal('0')
+    for mon in ('ARS','USD','USDT'):
+        s = base_qs.filter(tipo='deposito', moneda=mon).aggregate(s=Sum('monto'))['s'] or 0
+        total_ingresado_ars += _to_ars_compra(s, mon, cot_usd, cot_usdt)
+
+    total_retirado_ars = Decimal('0')
+    for mon in ('ARS','USD','USDT'):
+        s = base_qs.filter(tipo='retiro', moneda=mon).aggregate(s=Sum('monto'))['s'] or 0
+        total_retirado_ars += _to_ars_compra(s, mon, cot_usd, cot_usdt)
+
+    flujo_neto_ars = total_ingresado_ars - total_retirado_ars
+
+    # Valor de cartera actual a ARS con COMPRA
+    cartera_ars = (
+        _to_ars_compra(request.user.saldo_ars,  'ARS',  cot_usd, cot_usdt) +
+        _to_ars_compra(request.user.saldo_usd,  'USD',  cot_usd, cot_usdt) +
+        _to_ars_compra(request.user.saldo_usdt, 'USDT', cot_usd, cot_usdt)
+    )
+
+    # Serie diaria (últimos 30 días) con COMPRA
+    hoy = date.today()
+    desde = hoy - timedelta(days=29)
+
+    serie_deps = (
+        base_qs.filter(tipo='deposito', fecha__date__gte=desde)
+               .annotate(dia=TruncDate('fecha'))
+               .values('dia','moneda')
+               .annotate(m=Sum('monto'))
+    )
+    serie_rets = (
+        base_qs.filter(tipo='retiro', fecha__date__gte=desde)
+               .annotate(dia=TruncDate('fecha'))
+               .values('dia','moneda')
+               .annotate(m=Sum('monto'))
+    )
+
+    mapa_dep, mapa_ret = {}, {}
+    for r in serie_deps:
+        k = r['dia']
+        mapa_dep.setdefault(k, Decimal('0'))
+        mapa_dep[k] += _to_ars_compra(r['m'], r['moneda'], cot_usd, cot_usdt)
+    for r in serie_rets:
+        k = r['dia']
+        mapa_ret.setdefault(k, Decimal('0'))
+        mapa_ret[k] += _to_ars_compra(r['m'], r['moneda'], cot_usd, cot_usdt)
+
+    labels, data_dep, data_ret, data_net = [], [], [], []
+    for i in range(30):
+        d = desde + timedelta(days=i)
+        dep = mapa_dep.get(d, Decimal('0'))
+        ret = mapa_ret.get(d, Decimal('0'))
+        labels.append(d.isoformat())
+        data_dep.append(float(dep))
+        data_ret.append(float(ret))
+        data_net.append(float(dep - ret))
+
+    # --- valores de compra para normalizar a ARS
+    p_usdt = Decimal(cot_usdt.compra or 0)
+    p_usd  = Decimal(cot_usd.compra  or 0)
+
+    # datos para el donut (valor ARS por activo)
+    comp_labels = ['ARS','USDT','USD']
+    comp_units  = [
+        float(Decimal(request.user.saldo_ars or 0)),
+        float(Decimal(request.user.saldo_usdt or 0)),
+        float(Decimal(request.user.saldo_usd  or 0)),
+    ]
+    comp_ars    = [
+        float(Decimal(request.user.saldo_ars or 0)),
+        float(Decimal(request.user.saldo_usdt or 0) * p_usdt),
+        float(Decimal(request.user.saldo_usd  or 0) * p_usd),
+    ]
+
     notificaciones = Notificacion.objects.filter(usuario=request.user).order_by('-fecha')[:10]
     notificaciones_no_leidas = Notificacion.objects.filter(usuario=request.user, leida=False)
 
@@ -98,10 +271,25 @@ def dashboard(request):
         'movimientos': movimientos,
         'cot_usdt': cot_usdt,
         'cot_usd': cot_usd,
+        # Bloque saldos usa request.user directamente (como pediste)
+        # KPIs mini
+        'kpi_total_ingresado': total_ingresado_ars,
+        'kpi_total_retirado': total_retirado_ars,
+        'kpi_flujo_neto': flujo_neto_ars,
+        'kpi_cartera_ars': cartera_ars,
+        # charts
+        'chart_labels': labels,
+        'chart_deps': data_dep,
+        'chart_rets': data_ret,
+        'chart_net':  data_net,
+        'comp_labels': comp_labels,
+        
+        
+        'comp_units':  comp_units,
+        'comp_ars':    comp_ars,
         'notificaciones': notificaciones,
         'notificaciones_no_leidas': notificaciones_no_leidas,
     })
-
 
 def es_admin(user):
     return user.is_superuser or user.is_staff
@@ -390,6 +578,7 @@ def operar(request):
     if not cot_usdt or not cot_usd:
         return HttpResponse("No hay cotización disponible. Intentá más tarde.", status=503)
 
+    # precios PUBLICADOS (applied)
     cot_usdt_compra = cot_usdt.compra
     cot_usdt_venta  = cot_usdt.venta
     cot_usd_compra  = cot_usd.compra
@@ -398,34 +587,48 @@ def operar(request):
     if request.method == 'POST':
         operacion = request.POST.get('operacion')
 
-        # COMPRA / VENTA contra ARS
         if operacion in ('compra', 'venta'):
             moneda = request.POST.get('moneda')
             try:
                 monto = Decimal(request.POST.get('monto'))
             except Exception:
-                logger.error(f"[OPERAR ERROR] Usuario: {request.user.username} - Monto inválido")
                 return HttpResponse("Monto inválido.", status=400)
 
             try:
                 if operacion == 'compra':
-                    cot = cot_usdt_venta if moneda == 'USDT' else cot_usd_venta
-                    ok, err = procesar_compra(request.user, moneda, monto, cot)
+                    # cliente paga ARS y recibe CCY al precio de VENTA publicado
+                    if moneda == 'USDT':
+                        cot_applied = Decimal(cot_usdt_venta); ref_price = Decimal(cot_usdt.ref_venta or cot_usdt_venta)
+                    else:
+                        cot_applied = Decimal(cot_usd_venta);  ref_price = Decimal(cot_usd.ref_venta  or cot_usd_venta)
+                    ok, err, mov_ccy = procesar_compra(request.user, moneda, monto, cot_applied, return_mov_ccy=True)
+                    if not ok: return HttpResponse(err, status=400)
+                    # ingreso de la casa por spread (en ARS)
+                    registrar_spread_compra(
+                        usuario=request.user, moneda_ccy=moneda, monto_ars=monto,
+                        ref_price=ref_price, applied_price=cot_applied,
+                        movimiento=mov_ccy, detalle_extra={"cot_id": (cot_usdt.id if moneda=='USDT' else cot_usd.id)}
+                    )
                 else:
-                    cot = cot_usdt_compra if moneda == 'USDT' else cot_usd_compra
-                    ok, err = procesar_venta(request.user, moneda, monto, cot)
-
-                if not ok:
-                    return HttpResponse(err, status=400)
+                    # cliente entrega CCY y recibe ARS al precio de COMPRA publicado
+                    if moneda == 'USDT':
+                        cot_applied = Decimal(cot_usdt_compra); ref_price = Decimal(cot_usdt.ref_compra or cot_usdt_compra)
+                    else:
+                        cot_applied = Decimal(cot_usd_compra);  ref_price = Decimal(cot_usd.ref_compra  or cot_usd_compra)
+                    ok, err, mov_ars, monto_ccy = procesar_venta(request.user, moneda, monto, cot_applied, return_mov_ars=True)
+                    if not ok: return HttpResponse(err, status=400)
+                    registrar_spread_venta(
+                        usuario=request.user, moneda_ccy=moneda, monto_ccy=monto,
+                        ref_price=ref_price, applied_price=cot_applied,
+                        movimiento=mov_ars, detalle_extra={"cot_id": (cot_usdt.id if moneda=='USDT' else cot_usd.id)}
+                    )
 
                 messages.success(request, "Operación realizada con éxito.")
                 return redirect('dashboard')
 
-            except Exception as e:
-                logger.error(f"[OPERAR ERROR] Usuario: {request.user.username} - Error: {str(e)}")
+            except Exception:
                 return HttpResponse("Ocurrió un error al procesar la operación.", status=400)
 
-        # SWAP USD ⇄ USDT
         elif operacion == 'swap':
             direction = request.POST.get('swap_direccion')  # 'USD_to_USDT' | 'USDT_to_USD'
             try:
@@ -434,10 +637,17 @@ def operar(request):
                 messages.error(request, "Monto inválido.")
                 return redirect('dashboard')
 
-            ok, err = procesar_swap(request.user, direction, amount)
+            ok, err, mov_dest, fee_amount, fee_currency = procesar_swap(request.user, direction, amount, return_fee=True)
             if not ok:
                 messages.error(request, err)
                 return redirect('dashboard')
+
+            # registrar fee cobrado
+            registrar_comision_swap(
+                usuario=request.user, direccion=direction,
+                fee_amount=fee_amount, fee_currency=fee_currency,
+                movimiento=mov_dest, detalle_extra={"swap_fee_bps": getattr(settings,'SWAP_FEE_BPS',100)}
+            )
 
             messages.success(request, "Swap realizado con éxito.")
             return redirect('dashboard')
@@ -456,12 +666,12 @@ def operar(request):
 
 
 
-def procesar_compra(usuario, moneda, monto_ars, cotizacion_venta):
+def procesar_compra(usuario, moneda, monto_ars, cotizacion_venta, *, return_mov_ccy=False):
     from usuarios.services.boletos import emitir_boleto
     with transaction.atomic():
         u = Usuario.objects.select_for_update().get(pk=usuario.pk)
         if monto_ars <= 0 or u.saldo_ars < monto_ars:
-            return False, "Saldo ARS insuficiente o monto inválido"
+            return False, "Saldo ARS insuficiente o monto inválido", None
 
         recibido = q2(Decimal(monto_ars) / Decimal(cotizacion_venta))
 
@@ -491,7 +701,6 @@ def procesar_compra(usuario, moneda, monto_ars, cotizacion_venta):
             saldo_antes=mon_antes, saldo_despues=mon_despues
         )
 
-        # boleto obligatorio
         numero = gen_numero_boleto()
         snapshot = {
             'titulo': f'Compra de {moneda}',
@@ -513,26 +722,28 @@ def procesar_compra(usuario, moneda, monto_ars, cotizacion_venta):
         tipo_bol = 'compra_ars_usdt' if moneda == 'USDT' else 'compra_ars_usd'
         emitir_boleto(u, tipo_bol, numero, snapshot, movimiento=mov_ccy)
 
-        return True, None
+        if return_mov_ccy:
+            return True, None, mov_ccy
+        return True, None, None
 
 
-def procesar_venta(usuario, moneda, monto_moneda, cotizacion_compra):
+def procesar_venta(usuario, moneda, monto_moneda, cotizacion_compra, *, return_mov_ars=False):
     from usuarios.services.boletos import emitir_boleto
     with transaction.atomic():
         u = Usuario.objects.select_for_update().get(pk=usuario.pk)
 
         if monto_moneda <= 0:
-            return False, "Monto inválido"
+            return False, "Monto inválido", None, None
 
         if moneda == 'USDT':
             if u.saldo_usdt < monto_moneda:
-                return False, "Saldo USDT insuficiente"
+                return False, "Saldo USDT insuficiente", None, None
             mon_antes = u.saldo_usdt
             u.saldo_usdt = q2(u.saldo_usdt - monto_moneda)
             mon_despues = u.saldo_usdt
         else:
             if u.saldo_usd < monto_moneda:
-                return False, "Saldo USD insuficiente"
+                return False, "Saldo USD insuficiente", None, None
             mon_antes = u.saldo_usd
             u.saldo_usd = q2(u.saldo_usd - monto_moneda)
             mon_despues = u.saldo_usd
@@ -575,9 +786,12 @@ def procesar_venta(usuario, moneda, monto_moneda, cotizacion_compra):
         tipo_bol = 'venta_usdt_ars' if moneda == 'USDT' else 'venta_usd_ars'
         emitir_boleto(u, tipo_bol, numero, snapshot, movimiento=mov_ars)
 
-        return True, None
+        if return_mov_ars:
+            return True, None, mov_ars, monto_moneda
+        return True, None, None, None
 
-def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.00'), fee_bps=None):
+
+def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.00'), fee_bps=None, return_fee=False):
     from usuarios.services.boletos import emitir_boleto
     fee_bps = Decimal(fee_bps if fee_bps is not None else getattr(settings, 'SWAP_FEE_BPS', 100))
     fee_factor = (Decimal('1') - (fee_bps / Decimal('10000')))
@@ -585,11 +799,11 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
     with transaction.atomic():
         u = Usuario.objects.select_for_update().get(pk=usuario.pk)
         if amount <= 0:
-            return False, "El monto debe ser mayor a 0."
+            return False, "El monto debe ser mayor a 0.", None, None, None
 
         if direccion == 'USD_to_USDT':
             if u.saldo_usd < amount:
-                return False, "Saldo USD insuficiente"
+                return False, "Saldo USD insuficiente", None, None, None
 
             usd_antes = u.saldo_usd
             u.saldo_usd = q2(u.saldo_usd - amount)
@@ -597,6 +811,7 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
 
             usdt_bruto = amount * rate
             usdt_neto = q2(usdt_bruto * fee_factor)
+            fee_amt   = q2(usdt_bruto - usdt_neto)  # fee en USDT
 
             usdt_antes = u.saldo_usdt
             u.saldo_usdt = q2(u.saldo_usdt + usdt_neto)
@@ -619,7 +834,7 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
                 'titulo': 'Swap USD → USDT',
                 'estado': 'Completo',
                 'monto_debitado_fmt': fmt_ccy(amount, 'USD'),
-                'comision_total_fmt': f"{q2(usdt_bruto-usdt_neto)} USDT" if usdt_bruto != usdt_neto else None,
+                'comision_total_fmt': f"{fee_amt} USDT" if fee_amt > 0 else None,
                 'monto_origen_fmt': fmt_ccy(amount, 'USD'),
                 'tasa_fmt': f"{rate} USDT / USD — fee {fee_bps} bps",
                 'monto_destino_fmt': fmt_ccy(usdt_neto, 'USDT'),
@@ -633,11 +848,13 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
                 },
             }
             emitir_boleto(u, 'swap_usd_usdt', numero, snapshot, movimiento=mov_dest)
-            return True, None
+            if return_fee:
+                return True, None, mov_dest, fee_amt, 'USDT'
+            return True, None, None, None, None
 
         elif direccion == 'USDT_to_USD':
             if u.saldo_usdt < amount:
-                return False, "Saldo USDT insuficiente"
+                return False, "Saldo USDT insuficiente", None, None, None
 
             usdt_antes = u.saldo_usdt
             u.saldo_usdt = q2(u.saldo_usdt - amount)
@@ -645,6 +862,7 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
 
             usd_bruto = amount / rate
             usd_neto = q2(usd_bruto * fee_factor)
+            fee_amt  = q2(usd_bruto - usd_neto)  # fee en USD
 
             usd_antes = u.saldo_usd
             u.saldo_usd = q2(u.saldo_usd + usd_neto)
@@ -667,7 +885,7 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
                 'titulo': 'Swap USDT → USD',
                 'estado': 'Completo',
                 'monto_debitado_fmt': fmt_ccy(amount, 'USDT'),
-                'comision_total_fmt': f"{q2(usd_bruto-usd_neto)} USD" if usd_bruto != usd_neto else None,
+                'comision_total_fmt': f"{fee_amt} USD" if fee_amt > 0 else None,
                 'monto_origen_fmt': fmt_ccy(amount, 'USDT'),
                 'tasa_fmt': f"{rate} USDT / USD — fee {fee_bps} bps",
                 'monto_destino_fmt': fmt_ccy(usd_neto, 'USD'),
@@ -681,10 +899,11 @@ def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.0
                 },
             }
             emitir_boleto(u, 'swap_usdt_usd', numero, snapshot, movimiento=mov_dest)
-            return True, None
+            if return_fee:
+                return True, None, mov_dest, fee_amt, 'USD'
+            return True, None, None, None, None
 
-        return False, "Dirección de swap inválida"
-
+        return False, "Dirección de swap inválida", None, None, None
 
 @login_required
 def solicitar_retiro(request):
@@ -1763,3 +1982,217 @@ def admin_usuarios_list(request):
         "usuarios": usuarios,
         "f": {"q": q, "estado": estado, "activo": activo},
     })
+
+
+# CONTABILIDAD 
+
+AFFECTS_CASH = {"spread_compra", "spread_venta", "fee_swap", "ajuste"}
+
+def _parse_iso_date(s):
+    if not s:
+        return None
+    try:
+        # admite YYYY-MM-DD
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+def _qs_exchange_from_request(request):
+    """
+    Centraliza la construcción del queryset con filtros por GET.
+    """
+    params = {
+        "desde": request.GET.get("desde") or "",
+        "hasta": request.GET.get("hasta") or "",
+        "cat":   request.GET.get("cat")   or "",
+        "mon":   request.GET.get("mon")   or "",
+    }
+
+    qs = ApunteExchange.objects.select_related("usuario").all()
+
+    d1 = _parse_iso_date(params["desde"])
+    d2 = _parse_iso_date(params["hasta"])
+
+    if d1:
+        qs = qs.filter(fecha__date__gte=d1)
+    if d2:
+        qs = qs.filter(fecha__date__lte=d2)
+
+    if params["cat"]:
+        qs = qs.filter(categoria=params["cat"])
+    if params["mon"]:
+        qs = qs.filter(moneda=params["mon"])
+
+    return qs, params
+
+def staff_required(u):
+    return u.is_staff or u.is_superuser
+
+@login_required
+@user_passes_test(staff_required)
+def exchange_dashboard(request):
+    qs, params = _qs_exchange_from_request(request)
+
+    cuenta = CuentaExchange.objects.first()
+
+    # Caja del exchange = SOLO rentas del negocio (y ajustes si hubiera)
+    RENTAS_CATS = ['spread_compra', 'spread_venta', 'fee_swap', 'ajuste']
+
+    # Métricas globales (no tocan caja)
+    FLOW_IN_CATS  = ['entrada']  # depósitos acreditados
+    FLOW_OUT_CATS = ['salida']   # retiros enviados
+
+    # KPIs de renta (en ARS normalizado)
+    ingresos_ars = qs.filter(categoria__in=RENTAS_CATS).aggregate(s=Sum("monto_ars"))["s"] or Decimal("0")
+
+    # Totales de flujo global (lo que entró y salió de la app)
+    total_entradas = qs.filter(categoria__in=FLOW_IN_CATS).aggregate(s=Sum("monto_ars"))["s"] or Decimal("0")
+    total_salidas  = qs.filter(categoria__in=FLOW_OUT_CATS).aggregate(s=Sum("monto_ars"))["s"] or Decimal("0")
+
+    # Serie diaria (por defecto, sobre TODO lo filtrado). Si querés SOLO rentas:
+    serie = (
+        qs.filter(categoria__in=RENTAS_CATS)
+          .annotate(dia=TruncDate("fecha"))
+          .values("dia")
+          .annotate(total_ars=Sum("monto_ars"))
+          .order_by("dia")
+    )
+    serie_diaria = [{"dia": s["dia"].isoformat(), "total_ars": float(s["total_ars"] or 0)} for s in serie]
+
+    totales_cat = (
+        qs.values("categoria")
+          .annotate(total_ars=Sum("monto_ars"), n=Count("id"))
+          .order_by("-total_ars")
+    )
+
+    totales_mon = (
+        qs.values("moneda")
+          .annotate(total_mon=Sum("monto_moneda"), total_ars=Sum("monto_ars"))
+          .order_by("moneda")
+    )
+
+    apuntes = qs.order_by("-fecha")[:200]
+
+    ctx = {
+        "params": params,
+        "cuenta": cuenta,
+        "ingresos_ars": ingresos_ars,      # renta neta normalizada a ARS
+        "total_entradas": total_entradas,  # métrica global (depósitos)
+        "total_salidas":  total_salidas,   # métrica global (retiros)
+        "serie_diaria": serie_diaria,
+        "totales_cat": totales_cat,
+        "totales_mon": totales_mon,
+        "apuntes": apuntes,
+    }
+    return render(request, "usuarios/exchange_dashboard.html", ctx)
+
+
+@login_required
+@user_passes_test(staff_required)
+def exchange_export_csv(request):
+    qs, params = _qs_exchange_from_request(request)
+
+    # Armá la respuesta
+    resp = HttpResponse(content_type="text/csv")
+    resp['Content-Disposition'] = 'attachment; filename="exchange_apuntes.csv"'
+    w = csv.writer(resp)
+
+    # Encabezados (alineados a tu modelo nuevo)
+    w.writerow([
+        "fecha", "categoria", "moneda",
+        "monto_moneda", "monto_ars",
+        "usuario", "detalle",
+        "ref_price", "applied_price",
+        "ref_movimiento", "extra_json"
+    ])
+
+    for a in qs.order_by("fecha"):
+        w.writerow([
+            a.fecha.strftime("%Y-%m-%d %H:%M:%S"),
+            a.categoria,
+            a.moneda,
+            f"{a.monto_moneda}",
+            f"{a.monto_ars}",
+            (a.usuario.username if a.usuario else ""),
+            (a.detalle or ""),
+            (a.ref_price or ""),
+            (a.applied_price or ""),
+            (a.ref_movimiento or ""),
+            a.extra or {},
+        ])
+
+    return resp
+
+
+
+
+@login_required
+def verify_email_notice(request):
+    # Página que dice "revisá tu email" + botón "reenviar" + "cambiar email"
+    if request.user.email_confirmed:
+        return redirect('dashboard')  # ya confirmado
+    return render(request, 'usuarios/verify_email_notice.html')
+
+@login_required
+@require_POST
+def resend_verification(request):
+    if request.user.email_confirmed:
+        return redirect('dashboard')
+    send_verification_email(request, request.user)
+    request.user.email_confirm_sent_at = timezone.now()
+    request.user.save(update_fields=['email_confirm_sent_at'])
+    messages.success(request, "Te enviamos un nuevo email de verificación.")
+    return redirect('verify_email_notice')
+
+@login_required
+def change_email_form(request):
+    if request.user.email_confirmed:
+        return redirect('dashboard')
+    return render(request, 'usuarios/change_email_form.html')
+
+@login_required
+@require_POST
+def change_email_submit(request):
+    if request.user.email_confirmed:
+        return redirect('dashboard')
+
+    new_email = (request.POST.get('email') or '').strip().lower()
+    if not new_email:
+        messages.error(request, "Ingresá un email válido.")
+        return redirect('change_email_form')
+
+    # podés agregar validaciones extra (unicidad, etc.)
+    if User.objects.filter(email=new_email).exclude(pk=request.user.pk).exists():
+        messages.error(request, "Ese email ya está en uso.")
+        return redirect('change_email_form')
+
+    request.user.email = new_email
+    request.user.email_confirmed = False
+    request.user.save(update_fields=['email', 'email_confirmed'])
+
+    send_verification_email(request, request.user)
+    messages.success(request, "Actualizamos tu email. Te enviamos un nuevo enlace de verificación.")
+    return redirect('verify_email_notice')
+
+def verify_email(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except Exception:
+        user = None
+
+    if user and default_token_generator.check_token(user, token):
+        if not user.email_confirmed:
+            user.email_confirmed = True
+            user.email_confirmed_at = timezone.now()
+            user.save(update_fields=['email_confirmed', 'email_confirmed_at'])
+        messages.success(request, "¡Email verificado con éxito!")
+        # Si está logueado va al dashboard; si no, al login
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        return redirect('login')
+    else:
+        messages.error(request, "Enlace inválido o expirado. Pedí uno nuevo.")
+        if request.user.is_authenticated:
+            return redirect('verify_email_notice')
+        return redirect('login')

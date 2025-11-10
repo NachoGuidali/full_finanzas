@@ -60,11 +60,11 @@
   <style>
   :root {
     /* Light (por defecto) */
-    --bg:    #f6f8fc;
+    --bg:    #d0ff002a;
     --fg:    #0B1020;
     --muted: #475569;
     --card:  #ffffff;
-    --ring:  #D2FF00;
+    --ring: #121A36;            /* aro oscuro sobre claro */
     --border: rgba(2,6,23,.12);
     --tint-5:  rgba(2,6,23,.05);
     --tint-10: rgba(2,6,23,.10);
@@ -72,15 +72,23 @@
     --input-text:#0b1020;
     --input-border:rgba(2,6,23,0.18);
     --input-placeholder:#6b7280;
+    --accent: #0e1c4d;
+    --accent-fg: #121A36;   
   }
   html[data-theme="dark"]{
     --bg:#838282; --fg:#ffffff; --muted:rgba(255,255,255,.70);
     --card:#121A36; --border:rgba(255,255,255,.10);
     --tint-5:rgba(255,255,255,.05); --tint-10:rgba(255,255,255,.10);
+    --accent: #D2FF00;          /* neon */
+    --accent-fg: #121A36;
+  
+  
   }
   html{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
 
   body{ background:var(--bg); color:var(--fg); }
+
+  .text-accent { color: var(--accent); }
 
   .card{
     background:var(--card);
@@ -88,6 +96,13 @@
     border-radius:1rem;
     box-shadow:0 10px 20px -12px rgba(0,0,0,.25);
   }
+
+  .ff-logo--light { display: inline; }
+  .ff-logo--dark  { display: none; }
+
+  /* si el html tiene data-theme="light", invertimos */
+  [data-theme="dark"] .ff-logo--light { display: none; }
+  [data-theme="dark"] .ff-logo--dark  { display: inline; }
 
   /* Adaptadores de utilidades Tailwind */
   .text-white      { color: var(--fg)!important; }
@@ -195,73 +210,108 @@
   </div>
   {% include "includes/footer.html" %}
   {% block scripts %}
-  <script>
-    // drawer mobile
-    const openBtn = document.getElementById('openSidebar');
-    const closeBtn = document.getElementById('closeSidebar');
-    const drawer = document.getElementById('drawerSidebar');
-    const backdrop = document.getElementById('drawerBackdrop');
+<script>
+  (function(){
+    const btn    = document.getElementById('btnNotificaciones');
+    const dd     = document.getElementById('dropdownNoti');
+    const lista  = document.getElementById('listaNotiTop');
+    const badge  = document.getElementById('badgeNoti');
+    const limpiar= document.getElementById('limpiarNoti');
 
-    function toggleDrawer(show) {
-      drawer?.classList.toggle('-translate-x-full', !show);
-      backdrop?.classList.toggle('hidden', !show);
-    }
-    openBtn && openBtn.addEventListener('click', () => toggleDrawer(true));
-    closeBtn && closeBtn.addEventListener('click', () => toggleDrawer(false));
-    backdrop && backdrop.addEventListener('click', () => toggleDrawer(false));
-  </script>
+    if (!btn || !dd || !lista || !badge) return;
 
-  <script>
-    // --- Notificaciones: helpers simples ---
-    const notiState = { count: 0 };
-
-    function renderItem(text, time) {
+    // --- helpers ---
+    function li(t, time){
       return `
-      <li class="px-4 py-3 text-sm hover:bg-white/5">
-        <div class="flex items-start gap-2">
-          <span class="mt-0.5 text-neon">●</span>
-          <div>
-            <p>${text}</p>
-            <p class="text-[11px] text-white/50 mt-0.5">${time || new Date().toLocaleString('es-AR')}</p>
+        <li class="px-4 py-3 text-sm hover:bg-white/5">
+          <div class="flex items-start gap-2">
+            <span class="mt-0.5 text-neon">●</span>
+            <div>
+              <p>${t}</p>
+              <p class="text-[11px] text-white/50 mt-0.5">${time}</p>
+            </div>
           </div>
-        </div>
-      </li>`;
+        </li>`;
     }
 
-    function addNotificacion(text, time) {
-      const top = document.getElementById('listaNotiTop');
-      if (top) top.insertAdjacentHTML('afterbegin', renderItem(text, time));
-      // badge
-      notiState.count++;
-      const badge = document.getElementById('badgeNoti');
-      if (badge) { badge.textContent = notiState.count; badge.classList.remove('hidden'); }
+    async function getJSON(url){
+      const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
     }
-    // expongo para usar desde cualquier vista
-    window.FF_addNoti = addNotificacion;
+
+    async function actualizarBadge(){
+      try {
+        const data = await getJSON("{% url 'contar_notificaciones' %}");
+        const n = Number(data?.no_leidas || 0);
+        if (n > 0){
+          badge.textContent = n;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      } catch(e){
+        // silencioso
+        // console.error(e);
+      }
+    }
+
+    async function cargarLista(){  // también marca leídas en el server (tu view lo hace)
+      try {
+        const data = await getJSON("{% url 'ajax_obtener_notificaciones' %}");
+        const items = data?.notificaciones || [];
+        if (!items.length){
+          lista.innerHTML = `<li class="px-4 py-3 text-sm text-white/60">Sin notificaciones.</li>`;
+        } else {
+          lista.innerHTML = items.map(n => li(n.mensaje, n.fecha)).join('');
+        }
+        // oculto badge porque acabo de abrir y marcar
+        badge.classList.add('hidden');
+      } catch(e){
+        lista.innerHTML = `<li class="px-4 py-3 text-sm text-rose-400">No se pudieron cargar las notificaciones.</li>`;
+      }
+    }
+
+    // inicial: contador
+    actualizarBadge();
+
+    // polling badge cada 60s
+    setInterval(actualizarBadge, 60000);
 
     // toggle dropdown
-    const btnNoti = document.getElementById('btnNotificaciones');
-    const ddNoti = document.getElementById('dropdownNoti');
-    const limpiar = document.getElementById('limpiarNoti');
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const wasHidden = dd.classList.contains('hidden');
+      dd.classList.toggle('hidden');
+      btn.setAttribute('aria-expanded', wasHidden ? 'true' : 'false');
+      if (wasHidden) cargarLista(); // si se abre, cargo y marco leídas
+    });
 
-    btnNoti?.addEventListener('click', () => {
-      ddNoti?.classList.toggle('hidden');
-      btnNoti.setAttribute('aria-expanded', ddNoti.classList.contains('hidden') ? 'false' : 'true');
-      if (!ddNoti.classList.contains('hidden')) {
-        const badge = document.getElementById('badgeNoti');
-        badge?.classList.add('hidden');
-        notiState.count = 0;
+    // cerrar al click fuera
+    document.addEventListener('click', (e)=>{
+      if (!dd.contains(e.target) && !btn.contains(e.target)){
+        dd.classList.add('hidden');
+        btn.setAttribute('aria-expanded','false');
       }
     });
-    document.addEventListener('click', (e) => {
-      if (!ddNoti || !btnNoti) return;
-      if (!ddNoti.contains(e.target) && !btnNoti.contains(e.target)) ddNoti.classList.add('hidden');
+
+    // botón "Limpiar" solo limpia UI (ya están marcadas leídas por la API)
+    limpiar?.addEventListener('click', (e)=>{
+      e.preventDefault();
+      lista.innerHTML = '';
+      badge.classList.add('hidden');
     });
-    limpiar?.addEventListener('click', () => {
-      const top = document.getElementById('listaNotiTop');
-      top && (top.innerHTML = '');
-    });
-  </script>
+
+    // Mantengo tu API pública para push manual desde otras vistas
+    window.FF_addNoti = function(text, time){
+      lista.insertAdjacentHTML('afterbegin', li(text, time || new Date().toLocaleString('es-AR')));
+      // subo contador local y muestro badge (opcional)
+      const n = Number(badge.textContent || 0) + 1;
+      badge.textContent = n;
+      badge.classList.remove('hidden');
+    };
+  })();
+</script>
   {% endblock %}
   <script>
     document.querySelectorAll('input, select, textarea').forEach(el=>{

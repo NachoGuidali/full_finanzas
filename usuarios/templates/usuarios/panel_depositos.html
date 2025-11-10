@@ -13,7 +13,7 @@
 
   <div class="overflow-x-auto card p-0">
     <table class="w-full text-sm">
-      <thead class="bg-white/5 text-black/80">
+      <thead class="bg-white/5 text-accent">
         <tr>
           <th class="px-3 py-2 text-left">Usuario</th>
           <th class="px-3 py-2 text-left">Monto</th>
@@ -27,7 +27,7 @@
         {% for d in depositos %}
         <tr class="hover:bg-white/5">
           <td class="px-3 py-2">
-            <a href="{% url 'admin_usuario_perfil' d.usuario.id %}" class="text-neon hover:underline">{{ d.usuario.username }}</a>
+            <a href="{% url 'admin_usuario_perfil' d.usuario.id %}" class="text-accent hover:underline">{{ d.usuario.username }}</a>
           </td>
           <td class="px-3 py-2">${{ d.monto }}</td>
           <td class="px-3 py-2">

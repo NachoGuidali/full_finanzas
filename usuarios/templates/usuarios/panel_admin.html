@@ -59,7 +59,7 @@
 
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-white/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Email</th>
@@ -75,7 +75,7 @@
             {% if u.estado_verificacion != 'aprobado' %}
             <tr class="hover:bg-white/5">
               <td class="px-3 py-2">
-                <a class="text-neon hover:underline" href="{% url 'admin_usuario_perfil' u.id %}">{{ u.username }}</a>
+                <a class="text-accent hover:underline" href="{% url 'admin_usuario_perfil' u.id %}">{{ u.username }}</a>
               </td>
               <td class="px-3 py-2">{{ u.email }}</td>
               <td class="px-3 py-2">
@@ -122,7 +122,7 @@
     <h2 class="text-lg font-semibold">Retiros pendientes (ARS)</h2>
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-white/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Monto</th>
@@ -137,7 +137,7 @@
           {% for r in retiros %}
             {% if r.estado != 'enviado' %}
             <tr class="hover:bg-white/5">
-              <td class="px-3 py-2"><a class="text-neon hover:underline" href="{% url 'admin_usuario_perfil' r.usuario.id %}">{{ r.usuario.username }}</a></td>
+              <td class="px-3 py-2"><a class="text-accent hover:underline" href="{% url 'admin_usuario_perfil' r.usuario.id %}">{{ r.usuario.username }}</a></td>
               <td class="px-3 py-2">${{ r.monto }}</td>
               <td class="px-3 py-2">{{ r.alias }}</td>
               <td class="px-3 py-2">{{ r.cbu }}</td>
@@ -175,7 +175,7 @@
     <h2 class="text-lg font-semibold">Retiros CRYPTO</h2>
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-white/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Moneda</th>
@@ -188,7 +188,7 @@
         <tbody>
           {% for retiro in retiros_crypto %}
           <tr class="hover:bg-white/5">
-            <td class="px-3 py-2"><a class="text-neon hover:underline" href="{% url 'admin_usuario_perfil' retiro.usuario.id %}">{{ retiro.usuario.username }}</a></td>
+            <td class="px-3 py-2"><a class="text-accent hover:underline" href="{% url 'admin_usuario_perfil' retiro.usuario.id %}">{{ retiro.usuario.username }}</a></td>
             <td class="px-3 py-2">{{ retiro.moneda }}</td>
             <td class="px-3 py-2">{{ retiro.monto }}</td>
             <td class="px-3 py-2 break-all">{{ retiro.direccion_wallet }}</td>
@@ -221,7 +221,7 @@
     <h2 class="text-lg font-semibold">Depósitos pendientes</h2>
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-white/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Monto</th>
@@ -234,7 +234,7 @@
           {% for d in depositos %}
             {% if d.estado == 'pendiente' %}
             <tr class="hover:bg-white/5">
-              <td class="px-3 py-2"><a class="text-neon hover:underline" href="{% url 'admin_usuario_perfil' d.usuario.id %}">{{ d.usuario.username }}</a></td>
+              <td class="px-3 py-2"><a class="text-accent hover:underline" href="{% url 'admin_usuario_perfil' d.usuario.id %}">{{ d.usuario.username }}</a></td>
               <td class="px-3 py-2">${{ d.monto }}</td>
               <td class="px-3 py-2">
                 {% if d.comprobante %}
@@ -299,7 +299,7 @@
     <h2 class="text-lg font-semibold">Últimos movimientos</h2>
     <div class="overflow-x-auto card p-0">
       <table class="w-full text-sm">
-        <thead class="bg-white/5 text-white/80">
+        <thead class="bg-white/5 text-accent">
           <tr>
             <th class="px-3 py-2 text-left">Usuario</th>
             <th class="px-3 py-2 text-left">Tipo</th>
@@ -313,7 +313,7 @@
         <tbody>
           {% for m in movimientos %}
           <tr class="hover:bg-white/5">
-            <td class="px-3 py-2"><a class="text-neon hover:underline" href="{% url 'admin_usuario_perfil' m.usuario.id %}">{{ m.usuario.username }}</a></td>
+            <td class="px-3 py-2"><a class="text-accent hover:underline" href="{% url 'admin_usuario_perfil' m.usuario.id %}">{{ m.usuario.username }}</a></td>
             <td class="px-3 py-2">{{ m.tipo }}</td>
             <td class="px-3 py-2">{{ m.moneda }}</td>
             <td class="px-3 py-2">{{ m.monto }}</td>
