@@ -4,6 +4,26 @@
 
 {% block content %}
 <section class="max-w-7xl mx-auto px-4 py-8">
+<form action="{% url 'guardar_config_exchange' %}" method="post" class="rounded-xl border p-4 bg-white/5">
+  {% csrf_token %}
+  <h3 class="font-semibold mb-3">Parámetros del Exchange</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <label class="text-sm">
+      <span>Spread USDT (bps)</span>
+      {{ cfg_form.spread_bps_usdt }}
+    </label>
+    <label class="text-sm">
+      <span>Spread USD (bps)</span>
+      {{ cfg_form.spread_bps_usd }}
+    </label>
+    <label class="text-sm">
+      <span>Fee Swap (bps)</span>
+      {{ cfg_form.swap_fee_bps }}
+    </label>
+  </div>
+  <button class="mt-4 rounded-lg bg-primary text-dark font-semibold px-4 py-2">Guardar</button>
+  <p class="text-xs mt-2 opacity-70">Última actualización: {{ cfg.updated_at|date:"d/m/Y H:i" }}</p>
+</form>
 
   <!-- Header + búsqueda global -->
   <header class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

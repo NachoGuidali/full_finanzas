@@ -1,118 +1,122 @@
+import json
 import requests
-from decimal import Decimal, ROUND_HALF_UP
-from django.conf import settings
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
-from usuarios.models import Cotizacion
+from usuarios.models import Cotizacion, ExchangeConfig
 
 Q2 = lambda x: Decimal(x).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 Q6 = lambda x: Decimal(x).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
-def apply_bps(base: Decimal, bps: int, side: str) -> Decimal:
+def aplicar_spread(precio_ref: Decimal, bps: int, sentido: str) -> Decimal:
     """
-    side: 'compra' => (1 - bps/10000)
-          'venta'  => (1 + bps/10000)
+    sentido:
+      - 'compra' => precio que paga la casa al cliente (menor que ref)
+      - 'venta'  => precio que cobra la casa al cliente (mayor que ref)
     """
-    factor = Decimal("1") + (Decimal(bps) / Decimal("10000"))
-    if side == "compra":
-        return Q2(Decimal(base) / factor)  # alternativa: base*(1 - bps/10000)
-    return Q2(Decimal(base) * factor)
+    precio_ref = Decimal(precio_ref)
+    factor = Decimal(bps) / Decimal(10000)
+    if sentido == 'compra':
+        return Q2(precio_ref * (Decimal('1') - factor))
+    return Q2(precio_ref * (Decimal('1') + factor))
 
 class Command(BaseCommand):
-    help = 'Actualiza la cotización de USDT (Binance) y USD (DolarAPI) guardando refs y finales.'
+    help = 'Actualiza la cotización de USDT (Binance P2P) y USD (DolarAPI) aplicando spreads de ExchangeConfig'
 
     def handle(self, *args, **kwargs):
-        self.actualizar_usdt()
-        self.actualizar_usd()
+        cfg = ExchangeConfig.current()
+        self.actualizar_usdt(cfg.spread_bps_usdt)
+        self.actualizar_usd(cfg.spread_bps_usd)
 
-    def actualizar_usdt(self):
+    # ---------- USDT (Binance P2P) ----------
+    def actualizar_usdt(self, spread_bps: int):
         url = 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search'
-        data = {
+        payload = {
             "asset": "USDT",
             "fiat": "ARS",
-            "tradeType": "SELL",   # vendedores de USDT → precio de venta de USDT (lado “ask”)
-            "payTypes": [],
+            "tradeType": "SELL",   # vendedores de USDT → cliente COMPRA USDT
             "page": 1,
-            "rows": 5
+            "rows": 10,
+            "payTypes": []
         }
-        headers = {'Content-Type': 'application/json'}
-
-        spread_bps = getattr(settings, 'SPREAD_BPS_USDT', 200)
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
 
         try:
-            r = requests.post(url, json=data, headers=headers, timeout=12)
+            r = requests.post(url, data=json.dumps(payload), headers=headers, timeout=12)
             r.raise_for_status()
-            payload = r.json()
-            results = payload.get('data', []) or []
+            data = r.json().get('data', []) or []
+
             precios = []
-            for ad in results:
-                adv = ad.get('adv', {})
+            for item in data:
+                adv = item.get('adv') or {}
                 p = adv.get('price')
                 if p:
-                    precios.append(Q6(p))
+                    precios.append(Decimal(str(p)))
 
             if not precios:
-                self.stdout.write(self.style.WARNING("USDT: sin precios P2P (Binance)."))
+                self.stdout.write(self.style.WARNING("No se encontraron precios de USDT en Binance."))
                 return
 
-            ref = sum(precios) / Decimal(len(precios))  # referencia “cruda”
-            ref = Q6(ref)
+            # referencia: promedio simple de los top N
+            ref = Q6(sum(precios) / len(precios))
 
-            # Publicar finales con margen (simétrico):
-            compra = apply_bps(ref, spread_bps, side="compra")
-            venta  = apply_bps(ref, spread_bps, side="venta")
+            compra = aplicar_spread(ref, spread_bps, 'compra')
+            venta  = aplicar_spread(ref, spread_bps, 'venta')
 
             Cotizacion.objects.create(
                 moneda='USDT',
-                compra=compra,   # con margen
-                venta=venta,     # con margen
-                ref_compra=ref,  # crudo
-                ref_venta=ref,   # crudo (mismo valor)
+                compra=compra,
+                venta=venta,
                 fecha=now(),
-                
+                ref_compra=ref,     # guardamos ref para auditoría/contabilidad
+                ref_venta=ref,
                 margin_bps=spread_bps
             )
 
             self.stdout.write(self.style.SUCCESS(
-                f"[USDT] ref≈{ref} | compra={compra} venta={venta} (bps={spread_bps})"
+                f"[USDT] ref={ref} • compra={compra} • venta={venta} • bps={spread_bps}"
             ))
 
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"[ERROR USDT Binance] {e}"))
 
-    def actualizar_usd(self):
-        spread_bps = getattr(settings, 'SPREAD_BPS_USD', 200)
+    # ---------- USD (DolarAPI) ----------
+    def actualizar_usd(self, spread_bps: int):
+        url = "https://dolarapi.com/v1/dolares"
         try:
-            url = "https://dolarapi.com/v1/dolares"
-            r = requests.get(url, timeout=12)
+            r = requests.get(url, timeout=10)
             r.raise_for_status()
-            data = r.json() or []
+            data = r.json()
 
-            oficial = next((x for x in data if x.get('casa') == 'oficial'), None)
+            oficial = next((d for d in data if d.get('casa') == 'oficial'), None)
             if not oficial:
-                self.stdout.write(self.style.WARNING("USD: no se encontró 'oficial' en dolarapi."))
+                self.stdout.write(self.style.WARNING("No se encontró la cotización 'oficial' en dolarapi.com"))
                 return
 
-            ref_compra = Q6(oficial['compra'])
-            ref_venta  = Q6(oficial['venta'])
+            compra_raw = Decimal(str(oficial['compra']))
+            venta_raw  = Decimal(str(oficial['venta']))
 
-            # aplico margen simétrico
-            compra = apply_bps(ref_compra, spread_bps, side="compra")
-            venta  = apply_bps(ref_venta,  spread_bps, side="venta")
+            # referencia: mid-price entre compra y venta oficiales
+            ref = Q6((compra_raw + venta_raw) / Decimal('2'))
+
+            compra = aplicar_spread(ref, spread_bps, 'compra')
+            venta  = aplicar_spread(ref, spread_bps, 'venta')
 
             Cotizacion.objects.create(
                 moneda='USD',
                 compra=compra,
                 venta=venta,
-                ref_compra=ref_compra,
-                ref_venta=ref_venta,
                 fecha=now(),
-                
+                ref_compra=ref,
+                ref_venta=ref,
                 margin_bps=spread_bps
             )
 
             self.stdout.write(self.style.SUCCESS(
-                f"[USD] ref_compra={ref_compra} ref_venta={ref_venta} | compra={compra} venta={venta} (bps={spread_bps})"
+                f"[USD] ref={ref} • compra={compra} • venta={venta} • bps={spread_bps}"
             ))
 
         except Exception as e:

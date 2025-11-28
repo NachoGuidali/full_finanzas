@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponseRedirect, FileResponse, HttpResponse
-from .forms import RegistroUsuarioForm, DepositoARSForm, DepositoUSDTForm, SupportTicketForm, EmailOrUsernameAuthenticationForm
+from .forms import RegistroUsuarioForm, DepositoARSForm, DepositoUSDTForm, SupportTicketForm, EmailOrUsernameAuthenticationForm, ExchangeConfigForm
 from django.contrib import messages
 from django.urls import reverse
-from .models import Usuario, DepositoARS, Movimiento, Cotizacion, RetiroARS, Notificacion, RetiroCrypto, DepositoUSDT, BoletoOperacion, Provincia, Localidad, Pais, SupportTicket, ApunteExchange, CuentaExchange
+from .models import Usuario, DepositoARS, Movimiento, Cotizacion, RetiroARS, Notificacion, RetiroCrypto, DepositoUSDT, BoletoOperacion, Provincia, Localidad, Pais, SupportTicket, ApunteExchange, CuentaExchange, ExchangeConfig
 from decimal import Decimal, ROUND_DOWN
 from django.views.decorators.http import require_GET, require_POST
 from django.http import JsonResponse
@@ -38,8 +38,12 @@ from .utils_email_verify import send_verification_email
 from django.contrib.auth.views import LoginView
 
 
+from django import forms
+
 logger = logging.getLogger(__name__)
 User = get_user_model()
+def _cfg():
+    return ExchangeConfig.current()
 
 # helpers de formato / numeración
 def q2(x): return Decimal(x).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
@@ -338,6 +342,9 @@ def panel_admin(request):
         'kpi_retiros_ars_pend': kpi_retiros_ars_pend,
         'kpi_retiros_crypto_pend': kpi_retiros_crypto_pend,
     }
+    cfg = ExchangeConfig.current()
+    cfg_form = ExchangeConfigForm(instance=cfg)
+    context.update({"cfg_form": cfg_form, "cfg": cfg})
     return render(request, 'usuarios/panel_admin.html', context)
 
 @login_required
@@ -646,7 +653,7 @@ def operar(request):
             registrar_comision_swap(
                 usuario=request.user, direccion=direction,
                 fee_amount=fee_amount, fee_currency=fee_currency,
-                movimiento=mov_dest, detalle_extra={"swap_fee_bps": getattr(settings,'SWAP_FEE_BPS',100)}
+                movimiento=mov_dest, detalle_extra={"swap_fee_bps": _cfg().swap_fee_bps}
             )
 
             messages.success(request, "Swap realizado con éxito.")
@@ -659,7 +666,7 @@ def operar(request):
     return render(request, 'usuarios/operar.html', {
         'cot_usdt': {'compra': cot_usdt_compra, 'venta': cot_usdt_venta},
         'cot_usd':  {'compra': cot_usd_compra,  'venta': cot_usd_venta},
-        'swap_fee_bps': getattr(settings, 'SWAP_FEE_BPS', 100),
+        'swap_fee_bps': _cfg().swap_fee_bps,
         'swap_rate': Decimal('1.00'),
     })
 
@@ -793,7 +800,7 @@ def procesar_venta(usuario, moneda, monto_moneda, cotizacion_compra, *, return_m
 
 def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.00'), fee_bps=None, return_fee=False):
     from usuarios.services.boletos import emitir_boleto
-    fee_bps = Decimal(fee_bps if fee_bps is not None else getattr(settings, 'SWAP_FEE_BPS', 100))
+    fee_bps = Decimal(fee_bps if fee_bps is not None else _cfg().swap_fee_bps)
     fee_factor = (Decimal('1') - (fee_bps / Decimal('10000')))
 
     with transaction.atomic():
@@ -2196,3 +2203,19 @@ def verify_email(request, uidb64, token):
         if request.user.is_authenticated:
             return redirect('verify_email_notice')
         return redirect('login')
+    
+@login_required
+@user_passes_test(es_admin)
+@require_POST
+def guardar_config_exchange(request):
+    cfg = ExchangeConfig.current()
+    form = ExchangeConfigForm(request.POST, instance=cfg)
+    if form.is_valid():
+        form.save()
+        # invalidar caché para que se refleje inmediato
+        from django.core.cache import cache
+        cache.delete("exchange_config_current")
+        messages.success(request, "Configuración actualizada.")
+    else:
+        messages.error(request, "Revisá los valores ingresados.")
+    return redirect('panel_admin')    
