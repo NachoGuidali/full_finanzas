@@ -44,7 +44,11 @@
       </ul>
     </div>
   {% endif %}
-
+    {% if form.non_field_errors %}
+<div class="text-red-400 text-sm mb-3">
+    {{ form.non_field_errors }}
+</div>
+{% endif %}
   <!-- Stepper -->
   <div class="card p-4 mb-6">
     <ol class="grid grid-cols-4 gap-2 text-sm">
@@ -185,32 +189,43 @@
   const setHidden = (el, b) => el && el.classList.toggle('hidden', b);
 
   const form = $('#formRegistro');
-  let step = 1; const LAST = 4;
+  let step = 1; 
+  const LAST = 4;
 
   function showStep(n){
     step = Math.min(Math.max(1,n), LAST);
     $$('[data-step]').forEach(sec => setHidden(sec, Number(sec.dataset.step)!==step));
     $$('.step-item').forEach(li=>{
-      const idx = Number(li.dataset.stepIndex); const dot = $('.step-dot', li);
+      const idx = Number(li.dataset.stepIndex); 
+      const dot = $('.step-dot', li);
       dot.classList.remove('bg-neon','text-black','bg-white/10');
-      if (idx < step) { dot.classList.add('bg-neon','text-black'); }
-      else if (idx === step) { dot.classList.add('bg-white/10'); }
+      if (idx < step) {
+        dot.classList.add('bg-neon','text-black');
+      } else if (idx === step) {
+        dot.classList.add('bg-white/10');
+      }
     });
     $('#step-progress').style.width = (step*25)+'%';
-    const prev = $('#btnPrev'), next = $('#btnNext'), submit = $('#btnSubmit');
+    const prev   = $('#btnPrev');
+    const next   = $('#btnNext');
+    const submit = $('#btnSubmit');
     if (prev) prev.disabled = (step===1);
     setHidden(next,   step===LAST);
     setHidden(submit, step!==LAST);
   }
 
-  function req(id){ const el=document.getElementById(id); return el && el.value.trim().length>0; }
+  function req(id){
+    const el = document.getElementById(id); 
+    return el && el.value.trim().length>0;
+  }
 
-  // ---- Helpers errores inline (para paso 1) ----
+  // ---- Helpers errores inline ----
   function clearInlineErrors(container){
     container?.querySelectorAll('[data-inline-error]').forEach(e=>e.remove());
     container?.querySelectorAll('[aria-invalid="true"]').forEach(el=>el.removeAttribute('aria-invalid'));
     container?.querySelectorAll('.ring-red-500').forEach(el=>el.classList.remove('ring-red-500'));
   }
+
   function showInlineError(input, msg){
     if (!input) return;
     input.setAttribute('aria-invalid','true');
@@ -219,103 +234,248 @@
     p.className = 'mt-1 text-xs text-rose-400';
     p.setAttribute('data-inline-error','');
     p.textContent = msg;
-    input.parentElement.appendChild(p);
+    // Para inputs normales y checkboxes
+    const container = input.closest('label, .field-wrapper, div') || input.parentElement;
+    container.appendChild(p);
   }
 
-  function validateStepClient(s=step){
-    if (s===1){
-      const u = $('#id_username'), e = $('#id_email'), p1 = $('#id_password1'), p2 = $('#id_password2');
-      const cont = document.querySelector('[data-step="1"]');
-      clearInlineErrors(cont);
-      let ok = true;
-      if (!u?.value.trim()) { showInlineError(u, 'Ingresá un usuario.'); ok=false; }
-      if (!e?.value.trim()) { showInlineError(e, 'Ingresá un email.'); ok=false; }
-      if (!p1?.value.trim()) { showInlineError(p1, 'Ingresá una contraseña.'); ok=false; }
-      if (!p2?.value.trim()) { showInlineError(p2, 'Confirmá la contraseña.'); ok=false; }
-      if (p1?.value && p1.value.length < 8) { showInlineError(p1, 'La contraseña debe tener al menos 8 caracteres.'); ok=false; }
-      if (p1?.value && p2?.value && p1.value !== p2.value){ showInlineError(p2, 'Las contraseñas no coinciden.'); ok=false; }
+  function validateStepClient(s = step){
+    const sec = document.querySelector(`[data-step="${s}"]`);
+    clearInlineErrors(sec);
+    let ok = true;
+
+    // ---- Paso 1: credenciales ----
+    if (s === 1){
+      const u  = $('#id_username');
+      const e  = $('#id_email');
+      const p1 = $('#id_password1');
+      const p2 = $('#id_password2');
+
+      if (!u?.value.trim()) {
+        showInlineError(u, 'Ingresá un usuario.');
+        ok = false;
+      }
+      if (!e?.value.trim()) {
+        showInlineError(e, 'Ingresá un email.');
+        ok = false;
+      }
+      if (!p1?.value.trim()) {
+        showInlineError(p1, 'Ingresá una contraseña.');
+        ok = false;
+      }
+      if (!p2?.value.trim()) {
+        showInlineError(p2, 'Confirmá la contraseña.');
+        ok = false;
+      }
+      if (p1?.value && p1.value.length < 8) {
+        showInlineError(p1, 'La contraseña debe tener al menos 8 caracteres.');
+        ok = false;
+      }
+      if (p1?.value && p2?.value && p1.value !== p2.value){
+        showInlineError(p2, 'Las contraseñas no coinciden.');
+        ok = false;
+      }
       return ok;
     }
-    if (s===2){
-      return ['id_first_name','id_last_name','id_doc_tipo','id_doc_nro','id_telefono'].every(req);
+
+    // ---- Paso 2: datos personales ----
+    if (s === 2){
+      const required = [
+        ['id_first_name',        'Ingresá tu nombre.'],
+        ['id_last_name',         'Ingresá tu apellido.'],
+        ['id_persona_tipo',      'Seleccioná el tipo de persona.'],
+        ['id_estado_civil',      'Seleccioná tu estado civil.'],
+        ['id_sexo',              'Seleccioná tu sexo.'],
+        ['id_nacionalidad',      'Ingresá tu nacionalidad.'],
+        ['id_fecha_nacimiento',  'Ingresá tu fecha de nacimiento.'],
+        ['id_lugar_nacimiento',  'Ingresá tu lugar de nacimiento.'],
+        ['id_doc_tipo',          'Seleccioná el tipo de documento.'],
+        ['id_doc_nro',           'Ingresá tu número de documento.'],
+        ['id_telefono',          'Ingresá un teléfono de contacto.'],
+      ];
+
+      required.forEach(([id, msg])=>{
+        const input = document.getElementById(id);
+        if (input && !input.value.trim()){
+          showInlineError(input, msg);
+          ok = false;
+        }
+      });
+
+      return ok;
     }
-    if (s===3){
-      const ok = ['id_pais','id_provincia','id_localidad','id_codigo_postal','id_calle','id_numero_calle'].every(req);
+
+    // ---- Paso 3: domicilio ----
+    if (s === 3){
+      const required = [
+        ['id_pais',          'Seleccioná un país.'],
+        ['id_provincia',     'Seleccioná una provincia.'],
+        ['id_localidad',     'Seleccioná una localidad.'],
+        ['id_codigo_postal', 'Ingresá el código postal.'],
+        ['id_calle',         'Ingresá la calle.'],
+        ['id_numero_calle',  'Ingresá el número.'],
+      ];
+
+      required.forEach(([id, msg])=>{
+        const input = document.getElementById(id);
+        if (input && !input.value.trim()){
+          showInlineError(input, msg);
+          ok = false;
+        }
+      });
+
       const tyc = document.getElementById('id_acepta_tyc');
-      return ok && (!!tyc && tyc.checked);
+      if (tyc && !tyc.checked){
+        showInlineError(tyc, 'Debés aceptar los Términos y Condiciones.');
+        ok = false;
+      }
+
+      return ok;
     }
+
+    // Paso 4 (KYC) no se valida en front; lo hace Django al enviar
     return true;
   }
 
   function validateAllSteps(){
-    for (let s=1; s<=LAST; s++){
-      if (!validateStepClient(s)) return { ok:false, firstBad:s };
+    for (let s = 1; s <= LAST; s++){
+      if (!validateStepClient(s)) {
+        return { ok:false, firstBad:s };
+      }
     }
     return { ok:true, firstBad:null };
   }
 
   // ---- Navegación ----
-  $('#btnNext')?.addEventListener('click', ()=>{ if (!validateStepClient()) return; showStep(step+1); });
+  $('#btnNext')?.addEventListener('click', ()=>{
+    if (!validateStepClient()) return;
+    showStep(step+1);
+  });
+
   $('#btnPrev')?.addEventListener('click', ()=>showStep(step-1));
+
   $('#btnSubmit')?.addEventListener('click', (e)=>{
     e.preventDefault();
     const res = validateAllSteps();
     if (!res.ok){
       showStep(res.firstBad);
       const sec = document.querySelector(`[data-step="${res.firstBad}"]`);
-      const first = sec?.querySelector('input, select, textarea'); first && first.focus();
+      const first = sec?.querySelector('input, select, textarea'); 
+      first && first.focus();
       return;
     }
-    const selProv = $('#id_provincia'); const selLoc = $('#id_localidad');
-    selProv && (selProv.disabled=false); selLoc && (selLoc.disabled=false);
+    const selProv = $('#id_provincia'); 
+    const selLoc  = $('#id_localidad');
+    if (selProv) selProv.disabled = false; 
+    if (selLoc)  selLoc.disabled  = false;
     form.submit();
   });
 
   // ---- Geo dependientes (ajax) ----
-  const selPais = $('#id_pais'), selProv = $('#id_provincia'), selLoc  = $('#id_localidad');
-  async function fetchJson(url){ const r=await fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+  const selPais = $('#id_pais');
+  const selProv = $('#id_provincia');
+  const selLoc  = $('#id_localidad');
+
+  async function fetchJson(url){
+    const r = await fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(!r.ok) throw new Error('HTTP '+r.status); 
+    return r.json();
+  }
+
   function fillSelect(selectEl, items, getVal='id', getText='nombre', placeholder){
     if (!selectEl) return;
     const current = selectEl.value || '';
     selectEl.innerHTML = '';
     if (placeholder){
-      const ph = document.createElement('option'); ph.value=''; ph.textContent=placeholder; ph.disabled=true; ph.selected=!current;
+      const ph = document.createElement('option'); 
+      ph.value=''; 
+      ph.textContent=placeholder; 
+      ph.disabled=true; 
+      ph.selected=!current;
       selectEl.appendChild(ph);
     }
-    items.forEach(it=>{ const opt=document.createElement('option'); opt.value=it[getVal]; opt.textContent=it[getText]; selectEl.appendChild(opt); });
+    items.forEach(it=>{
+      const opt=document.createElement('option'); 
+      opt.value=it[getVal]; 
+      opt.textContent=it[getText]; 
+      selectEl.appendChild(opt);
+    });
     const exists = Array.from(selectEl.options).some(o=>o.value===current);
     if (exists) selectEl.value = current;
     selectEl.disabled = false;
   }
+
   async function loadProvincias(paisId){
     if (!selProv) return;
-    selProv.disabled = true; if (selLoc){ selLoc.disabled = true; selLoc.innerHTML = ''; }
-    if (!paisId) { selProv.innerHTML=''; return; }
-    try { const data = await fetchJson("{% url 'geo_provincias' %}?pais_id="+encodeURIComponent(paisId));
-      fillSelect(selProv, data.provincias||[], 'id','nombre', 'Seleccioná provincia'); selProv.dispatchEvent(new Event('change'));
-    } catch(e){ console.error('geo_provincias:', e); }
+    selProv.disabled = true; 
+    if (selLoc){
+      selLoc.disabled = true; 
+      selLoc.innerHTML = '';
+    }
+    if (!paisId) { 
+      selProv.innerHTML=''; 
+      return; 
+    }
+    try {
+      const data = await fetchJson("{% url 'geo_provincias' %}?pais_id="+encodeURIComponent(paisId));
+      fillSelect(selProv, data.provincias||[], 'id','nombre', 'Seleccioná provincia'); 
+      selProv.dispatchEvent(new Event('change'));
+    } catch(e){
+      console.error('geo_provincias:', e);
+    }
   }
+
   async function loadLocalidades(provId){
-    if (!selLoc) return; selLoc.disabled = true; if (!provId) { selLoc.innerHTML=''; return; }
-    try { const data = await fetchJson("{% url 'geo_localidades' %}?provincia_id="+encodeURIComponent(provId));
+    if (!selLoc) return; 
+    selLoc.disabled = true; 
+    if (!provId) { 
+      selLoc.innerHTML=''; 
+      return; 
+    }
+    try {
+      const data = await fetchJson("{% url 'geo_localidades' %}?provincia_id="+encodeURIComponent(provId));
       fillSelect(selLoc, data.localidades||[], 'id','nombre', 'Seleccioná localidad');
-    } catch(e){ console.error('geo_localidades:', e); }
+    } catch(e){
+      console.error('geo_localidades:', e);
+    }
   }
+
   selPais?.addEventListener('change', ()=> loadProvincias(selPais.value));
   selProv?.addEventListener('change', ()=> loadLocalidades(selProv.value));
-  (function initGeo(){ if (selPais && selPais.value){ loadProvincias(selPais.value); } })();
+
+  (function initGeo(){
+    if (selPais && selPais.value){
+      loadProvincias(selPais.value);
+    }
+  })();
 
   // ---- Reglas de entrada (patrones HTML) ----
   (function addInputPatterns(){
     const u = $('#id_username');
-    if (u){ u.setAttribute('pattern','^[A-Za-z0-9_]{4,20}$'); u.setAttribute('title','Solo letras, números y _ (4–20).'); u.maxLength = 20; }
+    if (u){
+      u.setAttribute('pattern','^[A-Za-z0-9_]{4,20}$');
+      u.setAttribute('title','Solo letras, números y _ (4–20).');
+      u.maxLength = 20;
+    }
     const p1 = $('#id_password1');
-    if (p1){ p1.setAttribute('pattern','(?=.*[A-Za-z])(?=.*\\d).{8,}'); p1.setAttribute('title','Mínimo 8, combinar letras y números'); }
+    if (p1){
+      p1.setAttribute('pattern','(?=.*[A-Za-z])(?=.*\\d).{8,}');
+      p1.setAttribute('title','Mínimo 8, combinar letras y números');
+    }
     const tel = $('#id_telefono');
-    if (tel){ tel.setAttribute('pattern','^\\d{10,11}$'); tel.setAttribute('inputmode','numeric'); tel.setAttribute('title','10 u 11 dígitos, sin + ni espacios (ej: 1122334455)'); }
+    if (tel){
+      tel.setAttribute('pattern','^\\d{10,11}$');
+      tel.setAttribute('inputmode','numeric');
+      tel.setAttribute('title','10 u 11 dígitos, sin + ni espacios (ej: 1122334455)');
+    }
     const dni = $('#id_doc_nro');
-    if (dni){ dni.setAttribute('pattern','^\\d{7,9}$'); dni.setAttribute('inputmode','numeric'); dni.setAttribute('title','Solo números (7–9 dígitos)'); }
-    const fr = $('#id_dni_frente'), dr = $('#id_dni_dorso');
+    if (dni){
+      dni.setAttribute('pattern','^\\d{7,9}$');
+      dni.setAttribute('inputmode','numeric');
+      dni.setAttribute('title','Solo números (7–9 dígitos)');
+    }
+    const fr = $('#id_dni_frente');
+    const dr = $('#id_dni_dorso');
     [fr,dr].forEach(f => {
       if (!f) return;
       f.setAttribute('accept','image/jpeg,image/png,image/webp');
@@ -324,14 +484,19 @@
 
   // ---- Abrir step con error del servidor (si lo hay) ----
   (function jumpToFirstServerError(){
-    let target = document.querySelector('[aria-invalid="true"]') || document.querySelector('.text-rose-400');
+    let target = document.querySelector('[aria-invalid="true"]') 
+               || document.querySelector('.text-rose-400');
     if (!target) return;
-    const sec = target.closest('[data-step]'); if (!sec) return;
-    const n = Number(sec.getAttribute('data-step')); if (n) showStep(n);
-    const first = sec.querySelector('input, select, textarea'); first && first.focus();
+    const sec = target.closest('[data-step]'); 
+    if (!sec) return;
+    const n = Number(sec.getAttribute('data-step')); 
+    if (n) showStep(n);
+    const first = sec.querySelector('input, select, textarea'); 
+    first && first.focus();
   })();
 
   showStep(1);
 })();
 </script>
 {% endblock %}
+

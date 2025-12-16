@@ -79,7 +79,7 @@
     --bg:#838282; --fg:#ffffff; --muted:rgba(255,255,255,.70);
     --card:#121A36; --border:rgba(255,255,255,.10);
     --tint-5:rgba(255,255,255,.05); --tint-10:rgba(255,255,255,.10);
-    --accent: #002141;          /* neon */
+    --accent: #8aff00;          /* neon */
     --accent-fg: #121A36;
   
   
@@ -318,6 +318,68 @@
     el.classList.add('w-full','rounded-md','border','border-white/10','bg-white','text-black','px-3','py-2','focus:outline-none','focus:ring-2');
   });
   </script>
+
+  <script>
+  (function () {
+    const sidebar   = document.getElementById("drawerSidebar");
+    const backdrop  = document.getElementById("drawerBackdrop");
+    const btnOpen   = document.getElementById("openSidebar");
+    const btnClose  = document.getElementById("closeSidebar");
+
+    // Si querés abrir también desde el icono de perfil, creamos un hook opcional:
+    const btnOpenProfile = document.getElementById("openSidebarProfile"); // opcional
+
+    if (!sidebar || !backdrop) return;
+
+    const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
+
+    function openDrawer() {
+      if (!isMobile()) return; // en desktop no lo abras como drawer
+      sidebar.classList.remove("-translate-x-full");
+      sidebar.classList.add("translate-x-0");
+      backdrop.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+      btnOpen?.setAttribute("aria-expanded", "true");
+    }
+
+    function closeDrawer() {
+      if (!isMobile()) return;
+      sidebar.classList.add("-translate-x-full");
+      sidebar.classList.remove("translate-x-0");
+      backdrop.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+      btnOpen?.setAttribute("aria-expanded", "false");
+    }
+
+    btnOpen?.addEventListener("click", openDrawer);
+    btnClose?.addEventListener("click", closeDrawer);
+    btnOpenProfile?.addEventListener("click", openDrawer);
+
+    backdrop.addEventListener("click", closeDrawer);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeDrawer();
+    });
+
+    // Si rotan el celu / cambian tamaño, resetea estado
+    window.addEventListener("resize", () => {
+      if (!isMobile()) {
+        backdrop.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+        // En desktop lo deja visible por clases md:translate-x-0
+      } else {
+        // En mobile lo dejamos cerrado por defecto
+        closeDrawer();
+      }
+    });
+
+    // Opcional: al tocar un link dentro del sidebar, cerrarlo en mobile
+    sidebar.addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (a && isMobile()) closeDrawer();
+    });
+  })();
+</script>
 </body>
 
 </html>

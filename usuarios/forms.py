@@ -136,6 +136,13 @@ class RegistroUsuarioForm(UserCreationForm):
         self.fields["password1"].widget.attrs["autocomplete"] = "new-password"
         self.fields["password2"].widget.attrs["autocomplete"] = "new-password"
 
+                # --- Marcar campos con errores ---
+        for name, field in self.fields.items():
+            if name in self.errors:
+                existing = field.widget.attrs.get("class", "")
+                field.widget.attrs["class"] = f"{existing} is-invalid".strip()
+
+
     # 📧 Validar email
     def clean_email(self):
         email = self.cleaned_data.get("email")
