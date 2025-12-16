@@ -3,10 +3,12 @@
 <div id="drawerBackdrop" class="fixed inset-0 z-40 hidden bg-black/50 md:hidden"></div>
 
 <!-- Drawer / Sidebar -->
-<aside id="drawerSidebar" class="fixed md:sticky md:top-0 z-50 md:z-10 h-screen w-72 -translate-x-full md:translate-x-0 transition-transform
-              bg-[var(--card)] border-r border-white/10 flex-shrink-0">
+<aside id="drawerSidebar" class="fixed inset-y-0 left-0 md:sticky md:top-0 z-50 md:z-10 w-72
+         -translate-x-full md:translate-x-0 transition-transform
+         bg-[var(--card)] border-r border-white/10 flex-shrink-0
+         h-[100dvh] flex flex-col">
   <!-- Header brand -->
-  <div class="h-14 px-4 flex items-center justify-between border-b border-white/10">
+  <div class="h-14 px-4 flex items-center justify-between border-b border-white/10 flex-shrink-0">
     <a href="{% url 'home' %}" class="flex items-center gap-2">
       <img class="h-16 w-32 ff-logo ff-logo--dark" src="{% static 'img/logo_horizontal.png' %}" alt="Full Finanzas">
       <img class="h-16 w-32 ff-logo ff-logo--light" src="{% static 'img/logo_horizontal_black.png' %}" alt="Full Finanzas">
@@ -19,6 +21,7 @@
   </div>
 
   <!-- Navegación -->
+  <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
   <nav class="px-3 py-4 space-y-1 text-[15px]">
     <a href="{% url 'dashboard' %}"
       class="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 {% if request.resolver_match.url_name == 'dashboard' %}bg-white/10{% endif %}">
@@ -215,5 +218,6 @@
         </tr>
       </table>
     </div>
+  </div>  
   </div>
 </aside>
