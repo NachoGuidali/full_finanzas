@@ -16,14 +16,14 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-  (function () {
-    try {
-      const v = localStorage.getItem('fullfinanzas-theme'); // 'light' | 'dark'
-      if (v === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-      else document.documentElement.removeAttribute('data-theme'); // light por defecto
-    } catch (_) {}
-  })();
-</script>
+    (function () {
+      try {
+        const v = localStorage.getItem('fullfinanzas-theme'); // 'light' | 'dark'
+        if (v === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme'); // light por defecto
+      } catch (_) { }
+    })();
+  </script>
   <script>
     tailwind.config = {
       theme: {
@@ -58,74 +58,126 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-  :root {
-    /* Light (por defecto) */
-    --bg:    #fffb0036;
-    --fg:    #0B1020;
-    --muted: #475569;
-    --card:  #ffffff;
-    --ring: #121A36;            /* aro oscuro sobre claro */
-    --border: rgba(2,6,23,.12);
-    --tint-5:  rgba(2,6,23,.05);
-    --tint-10: rgba(2,6,23,.10);
-    --input-bg:#ffffff;
-    --input-text:#0b1020;
-    --input-border:rgba(2,6,23,0.18);
-    --input-placeholder:#6b7280;
-    --accent: #002141;
-    --accent-fg: #121A36;   
-  }
-  html[data-theme="dark"]{
-    --bg:#838282; --fg:#ffffff; --muted:rgba(255,255,255,.70);
-    --card:#121A36; --border:rgba(255,255,255,.10);
-    --tint-5:rgba(255,255,255,.05); --tint-10:rgba(255,255,255,.10);
-    --accent: #8aff00;          /* neon */
-    --accent-fg: #121A36;
-  
-  
-  }
-  html{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
+    :root {
+      /* Light (por defecto) */
+      --bg: #fffb0036;
+      --fg: #0B1020;
+      --muted: #475569;
+      --card: #ffffff;
+      --ring: #121A36;
+      /* aro oscuro sobre claro */
+      --border: rgba(2, 6, 23, .12);
+      --tint-5: rgba(2, 6, 23, .05);
+      --tint-10: rgba(2, 6, 23, .10);
+      --input-bg: #ffffff;
+      --input-text: #0b1020;
+      --input-border: rgba(2, 6, 23, 0.18);
+      --input-placeholder: #6b7280;
+      --accent: #002141;
+      --accent-fg: #121A36;
+    }
 
-  body{ background:var(--bg); color:var(--fg); }
+    html[data-theme="dark"] {
+      --bg: #838282;
+      --fg: #ffffff;
+      --muted: rgba(255, 255, 255, .70);
+      --card: #121A36;
+      --border: rgba(255, 255, 255, .10);
+      --tint-5: rgba(255, 255, 255, .05);
+      --tint-10: rgba(255, 255, 255, .10);
+      --accent: #8aff00;
+      /* neon */
+      --accent-fg: #121A36;
 
-  .text-accent { color: var(--accent); }
 
-  .card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:1rem;
-    box-shadow:0 10px 20px -12px rgba(0,0,0,.25);
-  }
+    }
 
-  .ff-logo--light { display: inline; }
-  .ff-logo--dark  { display: none; }
+    html {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
 
-  /* si el html tiene data-theme="light", invertimos */
-  [data-theme="dark"] .ff-logo--light { display: none; }
-  [data-theme="dark"] .ff-logo--dark  { display: inline; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+    }
 
-  /* Adaptadores de utilidades Tailwind */
-  .text-white      { color: var(--fg)!important; }
-  .text-white\/70  { color: color-mix(in oklab, var(--fg) 70%, transparent)!important; }
-  .text-white\/60  { color: color-mix(in oklab, var(--fg) 60%, transparent)!important; }
-  .text-white\/50  { color: color-mix(in oklab, var(--fg) 50%, transparent)!important; }
-  .text-white\/40  { color: color-mix(in oklab, var(--fg) 40%, transparent)!important; }
+    .text-accent {
+      color: var(--accent);
+    }
 
-  .bg-white\/5     { background-color: var(--tint-5)!important; }
-  .bg-white\/10    { background-color: var(--tint-10)!important; }
-  .border-white\/10{ border-color: var(--tint-10)!important; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      box-shadow: 0 10px 20px -12px rgba(0, 0, 0, .25);
+    }
 
-  .bg-ink\/70 { background-color: color-mix(in oklab, var(--bg) 70%, transparent)!important; }
-  .focus\:ring-neon:focus { box-shadow: 0 0 0 2px var(--ring) }
-</style>
+    .ff-logo--light {
+      display: inline;
+    }
+
+    .ff-logo--dark {
+      display: none;
+    }
+
+    /* si el html tiene data-theme="light", invertimos */
+    [data-theme="dark"] .ff-logo--light {
+      display: none;
+    }
+
+    [data-theme="dark"] .ff-logo--dark {
+      display: inline;
+    }
+
+    /* Adaptadores de utilidades Tailwind */
+    .text-white {
+      color: var(--fg) !important;
+    }
+
+    .text-white\/70 {
+      color: color-mix(in oklab, var(--fg) 70%, transparent) !important;
+    }
+
+    .text-white\/60 {
+      color: color-mix(in oklab, var(--fg) 60%, transparent) !important;
+    }
+
+    .text-white\/50 {
+      color: color-mix(in oklab, var(--fg) 50%, transparent) !important;
+    }
+
+    .text-white\/40 {
+      color: color-mix(in oklab, var(--fg) 40%, transparent) !important;
+    }
+
+    .bg-white\/5 {
+      background-color: var(--tint-5) !important;
+    }
+
+    .bg-white\/10 {
+      background-color: var(--tint-10) !important;
+    }
+
+    .border-white\/10 {
+      border-color: var(--tint-10) !important;
+    }
+
+    .bg-ink\/70 {
+      background-color: color-mix(in oklab, var(--bg) 70%, transparent) !important;
+    }
+
+    .focus\:ring-neon:focus {
+      box-shadow: 0 0 0 2px var(--ring)
+    }
+  </style>
 
 
   {% block head_extra %}{% endblock %}
   {% block json_ld %}
-<script type="application/ld+json">
+  <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Full Finanzas","url":"{{ request.build_absolute_uri|default:'' }}"}
 </script>
-{% endblock %}
+  {% endblock %}
 </head>
 
 <body class="relative min-h-screen" style="background:var(--bg)">
@@ -175,19 +227,33 @@
                 class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">0</span>
             </button>
 
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button type="submit" class="hidden sm:inline-block text-sm text-white/70 hover:text-white">
-                Cerrar sesión
+            
+            <div class="relative">
+              <button id="btnUserMenu"
+                class="p-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10"
+                aria-haspopup="true" aria-expanded="false" aria-label="Menú de usuario" type="button">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" aria-hidden="true">
+                  <path fill="currentColor" d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" />
+                  <path fill="currentColor" d="M4 20c0-3.314 2.686-6 6-6h4c3.314 0 6 2.686 6 6v0H4z" />
+                </svg>
               </button>
-            </form>
-            <div class=""><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
-                aria-hidden="true">
-                <path fill="currentColor" d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" />
-                <path fill="currentColor" d="M4 20c0-3.314 2.686-6 6-6h4c3.314 0 6 2.686 6 6v0H4z" />
-              </svg>
-            </div>
 
+              <div id="dropdownUser"
+                class="hidden absolute right-0 top-10 w-56 bg-[var(--card)] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-white/10">
+                  <p class="text-sm font-semibold">Cuenta</p>
+                  <p class="text-xs text-white/60">{{ request.user.email }}</p>
+                </div>
+
+                <form method="post" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <button type="submit"
+                    class="w-full text-left px-4 py-3 text-sm hover:bg-white/5">
+                    Cerrar sesión
+                  </button>
+                </form>
+              </div>
+            </div>
             {# Dropdown de notificaciones #}
             <div id="dropdownNoti"
               class="hidden absolute right-0 top-10 w-80 bg-[var(--card)] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
@@ -210,19 +276,19 @@
   </div>
   {% include "includes/footer.html" %}
   {% block scripts %}
-<script>
-  (function(){
-    const btn    = document.getElementById('btnNotificaciones');
-    const dd     = document.getElementById('dropdownNoti');
-    const lista  = document.getElementById('listaNotiTop');
-    const badge  = document.getElementById('badgeNoti');
-    const limpiar= document.getElementById('limpiarNoti');
+  <script>
+      (function () {
+        const btn = document.getElementById('btnNotificaciones');
+        const dd = document.getElementById('dropdownNoti');
+        const lista = document.getElementById('listaNotiTop');
+        const badge = document.getElementById('badgeNoti');
+        const limpiar = document.getElementById('limpiarNoti');
 
-    if (!btn || !dd || !lista || !badge) return;
+        if (!btn || !dd || !lista || !badge) return;
 
-    // --- helpers ---
-    function li(t, time){
-      return `
+        // --- helpers ---
+        function li(t, time) {
+          return `
         <li class="px-4 py-3 text-sm hover:bg-white/5">
           <div class="flex items-start gap-2">
             <span class="mt-0.5 text-neon">●</span>
@@ -232,154 +298,196 @@
             </div>
           </div>
         </li>`;
-    }
+        }
 
-    async function getJSON(url){
-      const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-      if (!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    }
+        async function getJSON(url) {
+          const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }
 
-    async function actualizarBadge(){
-      try {
-        const data = await getJSON("{% url 'contar_notificaciones' %}");
-        const n = Number(data?.no_leidas || 0);
-        if (n > 0){
+        async function actualizarBadge() {
+          try {
+            const data = await getJSON("{% url 'contar_notificaciones' %}");
+            const n = Number(data?.no_leidas || 0);
+            if (n > 0) {
+              badge.textContent = n;
+              badge.classList.remove('hidden');
+            } else {
+              badge.classList.add('hidden');
+            }
+          } catch (e) {
+            // silencioso
+            // console.error(e);
+          }
+        }
+
+        async function cargarLista() {  // también marca leídas en el server (tu view lo hace)
+          try {
+            const data = await getJSON("{% url 'ajax_obtener_notificaciones' %}");
+            const items = data?.notificaciones || [];
+            if (!items.length) {
+              lista.innerHTML = `<li class="px-4 py-3 text-sm text-white/60">Sin notificaciones.</li>`;
+            } else {
+              lista.innerHTML = items.map(n => li(n.mensaje, n.fecha)).join('');
+            }
+            // oculto badge porque acabo de abrir y marcar
+            badge.classList.add('hidden');
+          } catch (e) {
+            lista.innerHTML = `<li class="px-4 py-3 text-sm text-rose-400">No se pudieron cargar las notificaciones.</li>`;
+          }
+        }
+
+        // inicial: contador
+        actualizarBadge();
+
+        // polling badge cada 60s
+        setInterval(actualizarBadge, 60000);
+
+        // toggle dropdown
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasHidden = dd.classList.contains('hidden');
+          dd.classList.toggle('hidden');
+          btn.setAttribute('aria-expanded', wasHidden ? 'true' : 'false');
+          if (wasHidden) cargarLista(); // si se abre, cargo y marco leídas
+        });
+
+        // cerrar al click fuera
+        document.addEventListener('click', (e) => {
+          if (!dd.contains(e.target) && !btn.contains(e.target)) {
+            dd.classList.add('hidden');
+            btn.setAttribute('aria-expanded', 'false');
+          }
+        });
+
+        // botón "Limpiar" solo limpia UI (ya están marcadas leídas por la API)
+        limpiar?.addEventListener('click', (e) => {
+          e.preventDefault();
+          lista.innerHTML = '';
+          badge.classList.add('hidden');
+        });
+
+        // Mantengo tu API pública para push manual desde otras vistas
+        window.FF_addNoti = function (text, time) {
+          lista.insertAdjacentHTML('afterbegin', li(text, time || new Date().toLocaleString('es-AR')));
+          // subo contador local y muestro badge (opcional)
+          const n = Number(badge.textContent || 0) + 1;
           badge.textContent = n;
           badge.classList.remove('hidden');
-        } else {
-          badge.classList.add('hidden');
-        }
-      } catch(e){
-        // silencioso
-        // console.error(e);
-      }
-    }
-
-    async function cargarLista(){  // también marca leídas en el server (tu view lo hace)
-      try {
-        const data = await getJSON("{% url 'ajax_obtener_notificaciones' %}");
-        const items = data?.notificaciones || [];
-        if (!items.length){
-          lista.innerHTML = `<li class="px-4 py-3 text-sm text-white/60">Sin notificaciones.</li>`;
-        } else {
-          lista.innerHTML = items.map(n => li(n.mensaje, n.fecha)).join('');
-        }
-        // oculto badge porque acabo de abrir y marcar
-        badge.classList.add('hidden');
-      } catch(e){
-        lista.innerHTML = `<li class="px-4 py-3 text-sm text-rose-400">No se pudieron cargar las notificaciones.</li>`;
-      }
-    }
-
-    // inicial: contador
-    actualizarBadge();
-
-    // polling badge cada 60s
-    setInterval(actualizarBadge, 60000);
-
-    // toggle dropdown
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const wasHidden = dd.classList.contains('hidden');
-      dd.classList.toggle('hidden');
-      btn.setAttribute('aria-expanded', wasHidden ? 'true' : 'false');
-      if (wasHidden) cargarLista(); // si se abre, cargo y marco leídas
-    });
-
-    // cerrar al click fuera
-    document.addEventListener('click', (e)=>{
-      if (!dd.contains(e.target) && !btn.contains(e.target)){
-        dd.classList.add('hidden');
-        btn.setAttribute('aria-expanded','false');
-      }
-    });
-
-    // botón "Limpiar" solo limpia UI (ya están marcadas leídas por la API)
-    limpiar?.addEventListener('click', (e)=>{
-      e.preventDefault();
-      lista.innerHTML = '';
-      badge.classList.add('hidden');
-    });
-
-    // Mantengo tu API pública para push manual desde otras vistas
-    window.FF_addNoti = function(text, time){
-      lista.insertAdjacentHTML('afterbegin', li(text, time || new Date().toLocaleString('es-AR')));
-      // subo contador local y muestro badge (opcional)
-      const n = Number(badge.textContent || 0) + 1;
-      badge.textContent = n;
-      badge.classList.remove('hidden');
-    };
-  })();
-</script>
+        };
+      })();
+  </script>
   {% endblock %}
   <script>
-    document.querySelectorAll('input, select, textarea').forEach(el=>{
-    el.classList.add('w-full','rounded-md','border','border-white/10','bg-white','text-black','px-3','py-2','focus:outline-none','focus:ring-2');
-  });
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+      el.classList.add('w-full', 'rounded-md', 'border', 'border-white/10', 'bg-white', 'text-black', 'px-3', 'py-2', 'focus:outline-none', 'focus:ring-2');
+    });
+  </script>
+
+  <script>
+    (function () {
+      const sidebar = document.getElementById("drawerSidebar");
+      const backdrop = document.getElementById("drawerBackdrop");
+      const btnOpen = document.getElementById("openSidebar");
+      const btnClose = document.getElementById("closeSidebar");
+
+      // Si querés abrir también desde el icono de perfil, creamos un hook opcional:
+      const btnOpenProfile = document.getElementById("openSidebarProfile"); // opcional
+
+      if (!sidebar || !backdrop) return;
+
+      const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
+
+      function openDrawer() {
+        if (!isMobile()) return; // en desktop no lo abras como drawer
+        sidebar.classList.remove("-translate-x-full");
+        sidebar.classList.add("translate-x-0");
+        backdrop.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+        btnOpen?.setAttribute("aria-expanded", "true");
+      }
+
+      function closeDrawer() {
+        if (!isMobile()) return;
+        sidebar.classList.add("-translate-x-full");
+        sidebar.classList.remove("translate-x-0");
+        backdrop.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+        btnOpen?.setAttribute("aria-expanded", "false");
+      }
+
+      btnOpen?.addEventListener("click", openDrawer);
+      btnClose?.addEventListener("click", closeDrawer);
+      btnOpenProfile?.addEventListener("click", openDrawer);
+
+      backdrop.addEventListener("click", closeDrawer);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDrawer();
+      });
+
+      // Si rotan el celu / cambian tamaño, resetea estado
+      window.addEventListener("resize", () => {
+        if (!isMobile()) {
+          backdrop.classList.add("hidden");
+          document.body.classList.remove("overflow-hidden");
+          // En desktop lo deja visible por clases md:translate-x-0
+        } else {
+          // En mobile lo dejamos cerrado por defecto
+          closeDrawer();
+        }
+      });
+
+      // Opcional: al tocar un link dentro del sidebar, cerrarlo en mobile
+      sidebar.addEventListener("click", (e) => {
+        const a = e.target.closest("a");
+        if (a && isMobile()) closeDrawer();
+      });
+    })();
   </script>
 
   <script>
   (function () {
-    const sidebar   = document.getElementById("drawerSidebar");
-    const backdrop  = document.getElementById("drawerBackdrop");
-    const btnOpen   = document.getElementById("openSidebar");
-    const btnClose  = document.getElementById("closeSidebar");
+    const btnUser = document.getElementById('btnUserMenu');
+    const ddUser  = document.getElementById('dropdownUser');
 
-    // Si querés abrir también desde el icono de perfil, creamos un hook opcional:
-    const btnOpenProfile = document.getElementById("openSidebarProfile"); // opcional
+    const btnNoti = document.getElementById('btnNotificaciones');
+    const ddNoti  = document.getElementById('dropdownNoti');
 
-    if (!sidebar || !backdrop) return;
+    if (!btnUser || !ddUser) return;
 
-    const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
-
-    function openDrawer() {
-      if (!isMobile()) return; // en desktop no lo abras como drawer
-      sidebar.classList.remove("-translate-x-full");
-      sidebar.classList.add("translate-x-0");
-      backdrop.classList.remove("hidden");
-      document.body.classList.add("overflow-hidden");
-      btnOpen?.setAttribute("aria-expanded", "true");
+    function closeUser(){
+      ddUser.classList.add('hidden');
+      btnUser.setAttribute('aria-expanded','false');
     }
 
-    function closeDrawer() {
-      if (!isMobile()) return;
-      sidebar.classList.add("-translate-x-full");
-      sidebar.classList.remove("translate-x-0");
-      backdrop.classList.add("hidden");
-      document.body.classList.remove("overflow-hidden");
-      btnOpen?.setAttribute("aria-expanded", "false");
-    }
+    function toggleUser(e){
+      e.stopPropagation();
 
-    btnOpen?.addEventListener("click", openDrawer);
-    btnClose?.addEventListener("click", closeDrawer);
-    btnOpenProfile?.addEventListener("click", openDrawer);
-
-    backdrop.addEventListener("click", closeDrawer);
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeDrawer();
-    });
-
-    // Si rotan el celu / cambian tamaño, resetea estado
-    window.addEventListener("resize", () => {
-      if (!isMobile()) {
-        backdrop.classList.add("hidden");
-        document.body.classList.remove("overflow-hidden");
-        // En desktop lo deja visible por clases md:translate-x-0
-      } else {
-        // En mobile lo dejamos cerrado por defecto
-        closeDrawer();
+      // si notificaciones está abierto, lo cierro para que no se pisen
+      if (ddNoti && !ddNoti.classList.contains('hidden')) {
+        ddNoti.classList.add('hidden');
+        btnNoti?.setAttribute('aria-expanded','false');
       }
+
+      const willOpen = ddUser.classList.contains('hidden');
+      ddUser.classList.toggle('hidden');
+      btnUser.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
+
+    btnUser.addEventListener('click', toggleUser);
+
+    document.addEventListener('click', (e) => {
+      if (!ddUser.contains(e.target) && !btnUser.contains(e.target)) closeUser();
     });
 
-    // Opcional: al tocar un link dentro del sidebar, cerrarlo en mobile
-    sidebar.addEventListener("click", (e) => {
-      const a = e.target.closest("a");
-      if (a && isMobile()) closeDrawer();
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeUser();
     });
   })();
 </script>
+
 </body>
 
 </html>
