@@ -15,7 +15,7 @@ def build_verification_link(request, user):
 
 def send_verification_email(request, user):
     link = build_verification_link(request, user)
-    subject = "Confirmá tu email — Full Finanzas"
+    subject = "Confirmá tu email — Mas Finanzas"
     body_txt = render_to_string('emails/verify_email.txt', {'user': user, 'link': link})
     body_html = render_to_string('emails/verify_email.html', {'user': user, 'link': link})
     send_mail(

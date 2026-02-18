@@ -1552,7 +1552,7 @@ def soporte(request):
             ticket.save()
             try:
                 send_mail(
-                    subject=f"[Full Finanzas] Nuevo ticket #{ticket.id}: {ticket.asunto}",
+                    subject=f"[Mas Finanzas] Nuevo ticket #{ticket.id}: {ticket.asunto}",
                     message=(
                         f"Usuario: {request.user.username} ({ticket.email})\n"
                         f"Categoría: {ticket.categoria}\n"

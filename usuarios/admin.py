@@ -15,35 +15,80 @@ class CustomUserAdmin(UserAdmin):
     # LISTA
     # -------------------------
     list_display = (
-        'username', 'email', 'nombre', 'estado_verificacion',
-        'saldo_ars', 'saldo_usdt', 'saldo_usd', 'date_joined', 'ver_historial'
+        'username',
+        'email',
+        'email_confirmed',       # 👈 NUEVO
+        'estado_verificacion',
+        'nombre',
+        'saldo_ars',
+        'saldo_usdt',
+        'saldo_usd',
+        'date_joined',
+        'ver_historial',
     )
     list_display_links = ('username', 'email')
-    list_filter = ('estado_verificacion', 'is_active', 'is_staff', 'is_superuser', 'date_joined')
-    search_fields = ('username', 'email', 'first_name', 'last_name', 'doc_nro', 'telefono')
+    list_filter = (
+        'estado_verificacion',
+        'email_confirmed',       # 👈 NUEVO
+        'is_active',
+        'is_staff',
+        'is_superuser',
+        'date_joined',
+    )
+    search_fields = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'doc_nro',
+        'telefono',
+    )
     ordering = ('-date_joined',)
     date_hierarchy = 'date_joined'
-    actions = ['aprobar_verificacion', 'rechazar_verificacion']
+    actions = [
+        'aprobar_verificacion',
+        'rechazar_verificacion',
+        'marcar_email_verificado',   # 👈 NUEVA ACCIÓN
+    ]
 
     # -------------------------
-    # CAMPOS SOLO LECTURA (evita tocar saldos a mano)
+    # CAMPOS SOLO LECTURA
     # -------------------------
     readonly_fields = (
-        'dni_frente_preview', 'dni_dorso_preview',
-        'saldo_ars', 'saldo_usdt', 'saldo_usd',
-        'last_login', 'date_joined',
+        'dni_frente_preview',
+        'dni_dorso_preview',
+        'saldo_ars',
+        'saldo_usdt',
+        'saldo_usd',
+        'last_login',
+        'date_joined',
+        'email_confirmed_at',        # 👈 NUEVO
+        'email_confirm_sent_at',     # 👈 NUEVO
     )
 
     # -------------------------
     # FORM DE EDICIÓN
     # -------------------------
     fieldsets = UserAdmin.fieldsets + (
-        ("KYC", {"fields": (
-            "doc_tipo","doc_nro","nacionalidad","telefono",
-            "dni_frente","dni_dorso","estado_verificacion"
-        )}),
-        ("Domicilio", {"fields": ("pais","provincia","localidad","cp","direccion","domicilio")}),
-        ("Saldos", {"fields": ("saldo_ars","saldo_usdt","saldo_usd")}),
+        ("KYC", {
+            "fields": (
+                "doc_tipo", "doc_nro", "nacionalidad", "telefono",
+                "dni_frente", "dni_dorso", "estado_verificacion"
+            )
+        }),
+        ("Domicilio", {
+            "fields": ("pais", "provincia", "localidad", "domicilio")
+        }),
+        ("Email / Verificación", {   # 👈 NUEVO BLOQUE
+            "fields": (
+                "email_confirmed",
+                "email_confirmed_at",
+                "email_confirm_sent_at",
+            )
+        }),
+        ("Saldos", {
+            "fields": ("saldo_ars", "saldo_usdt", "saldo_usd")
+        }),
     )
 
     # (Opcional) si creás usuarios desde admin y querés capturar KYC en el alta:

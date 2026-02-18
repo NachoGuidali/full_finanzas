@@ -1,6 +1,6 @@
 Hola {{ user.username }},
 
-Para confirmar tu email en Full Finanzas, hacé clic en el siguiente enlace:
+Para confirmar tu email en Mas Finanzas, hacé clic en el siguiente enlace:
 
 {{ link }}
 

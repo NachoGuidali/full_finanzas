@@ -10,17 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    for line in env_path.read_text().splitlines():
+        if line.strip() and not line.strip().startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0l$ssxse&c$9u%vgjj=)e5fda@*_+xi6yu7d@(901(29z12r(3'
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "insecure-fallback-change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -80,17 +88,23 @@ WSGI_APPLICATION = 'core_exchange.wsgi.application'
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
-# }
+#     })
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "db",
-        "USER": "fullfinanzas",
-        "PASSWORD": "fullfinanzasbase",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
+
+# Validación simple para evitar arrancar “a medias”
+missing = [k for k in ("DB_NAME", "DB_USER", "DB_PASSWORD") if not os.environ.get(k)]
+if missing:
+    raise RuntimeError(f"Faltan variables de DB en el entorno: {', '.join(missing)}")
 
 
 
@@ -130,6 +144,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -154,11 +169,11 @@ CELERY_TASK_SERIALIZER = 'json'
 
 
 
-SITE_URL = "http://localhost:8000"       
-EMPRESA_NOMBRE = "Full Finanzas"
+SITE_URL = "www.masfinanzas.com.ar"       
+EMPRESA_NOMBRE = "Mas Finanzas"
 EMPRESA_CUIT = "30-00000000-0"
 EMPRESA_DOMICILIO = "Av. Cordoba 123, CABA"
-SUPPORT_CONTACTO = "soporte@fullfinanzas.com / +54 11 5555-0000"
+SUPPORT_CONTACTO = "soporte@masfinanzas.com.ar / +54 11 5555-0000"
 PSAV_LEYENDA = "Francisco Molina - Proveedor de Servicios de Activos Virtuales (PSAV) inscripto bajo el N°16 de la fecha 13 de mayo de 2025 del Registro PSAV – Personas Humanas, en el Registro de Proveedores de Servicios de Activos Virtuales de CNV. Este registro es a los fines del control como Sujeto Obligado ante la Unidad de Información Financiera (UIF) y de todo otro ente regulador facultado a tal efecto, en el marco de sus competencias, y no implica licencia ni supervisión por parte de la COMISIÓN NACIONAL DE VALORES sobre la actividad realizada por el PSAV"  
 
 
@@ -168,18 +183,25 @@ SWAP_FEE_BPS = 100
 SPREAD_BPS_USDT = 200  
 SPREAD_BPS_USD  = 200  
 
-#EMAIL SOPORTE
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # dev
-DEFAULT_FROM_EMAIL = "soporte@fullfinanzas.com"
-SOPORTE_TO = ["soporte@fullfinanzas.com"]  # destinatarios del equipo
+
+
+SOPORTE_TO = ["soporte@masfinanzas.com.ar"]  # destinatarios del equipo
 
 
 #tiempo restablecimiento contraseña
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # 24 hs 
 
 #Email verificacion 
- # email_backend
-DEFAULT_FROM_EMAIL = "Full Finanzas <no-reply@fullfinanzas.com>"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.resend.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = "resend"
+EMAIL_HOST_PASSWORD = "re_dtVExzG5_3jabL8ggfoUkwMNW9uZqizhv"
+
+DEFAULT_FROM_EMAIL = "Más Finanzas <no-reply@masfinanzas.com.ar>" 
 
 #produccion
 # EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -188,30 +210,32 @@ DEFAULT_FROM_EMAIL = "Full Finanzas <no-reply@fullfinanzas.com>"
 # EMAIL_HOST_USER = "apikey"         # SendGrid example
 # EMAIL_HOST_PASSWORD = "SG.xxxxxx"  # tu API key
 # EMAIL_USE_TLS = True
-# DEFAULT_FROM_EMAIL = "Full Finanzas <no-reply@fullfinanzas.com>"
+# DEFAULT_FROM_EMAIL = "Mas Finanzas <no-reply@masfinanzas.com>"
 
 
 
-TYC_VERSION = "2025"
+TYC_VERSION = "2026"
 
 
 # --------------- seguridad--------------
 
 
-# SECURE_SSL_REDIRECT = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
-# SECURE_HSTS_SECONDS = 31536000
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# SECURE_HSTS_PRELOAD = True
-# CSRF_TRUSTED_ORIGINS = ["https://tu-dominio.com", "https://www.tu-dominio.com"]
-# SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin" #usar este si necesitas que integradores vean el origen
-# SECURE_REFERRER_POLICY = "same-origin" #mas estricto
-# SECURE_CONTENT_TYPE_NOSNIFF = True
-# X_FRAME_OPTIONS = "DENY"
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+CSRF_TRUSTED_ORIGINS = ["http://160.153.182.98","https://masfnanzas.com.ar", "https://www.masfinanzas.com.ar"]
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin" #usar este si necesitas que integradores vean el origen
+SECURE_REFERRER_POLICY = "same-origin" #mas estricto
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
-# CSP (django-csp)
+#CSP (django-csp)
 #INSTALLED_APPS += ["csp"]
 #CSP_DEFAULT_SRC = ("'self'",)
 #CSP_SCRIPT_SRC  = ("'self'", "cdn.jsdelivr.net")  # Chart.js
@@ -219,8 +243,8 @@ TYC_VERSION = "2025"
 #CSP_IMG_SRC     = ("'self'", "data:")
 #CSP_CONNECT_SRC = ("'self'",)
 
-# INSTALLED_APPS += ["whitenoise.runserver_nostatic"]
-# MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+#INSTALLED_APPS += ["whitenoise.runserver_nostatic"]
+#MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 AUTHENTICATION_BACKENDS = [
     'usuarios.auth_backends.EmailOrUsernameBackend',
