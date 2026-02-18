@@ -7,20 +7,48 @@
 <form action="{% url 'guardar_config_exchange' %}" method="post" class="rounded-xl border p-4 bg-white/5">
   {% csrf_token %}
   <h3 class="font-semibold mb-3">Parámetros del Exchange</h3>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-    <label class="text-sm">
-      <span>Spread USDT (bps)</span>
-      {{ cfg_form.spread_bps_usdt }}
-    </label>
-    <label class="text-sm">
-      <span>Spread USD (bps)</span>
-      {{ cfg_form.spread_bps_usd }}
-    </label>
-    <label class="text-sm">
-      <span>Fee Swap (bps)</span>
-      {{ cfg_form.swap_fee_bps }}
-    </label>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="rounded-lg border border-white/10 p-3">
+      <h4 class="font-semibold text-sm mb-2">USDT</h4>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="text-sm">
+          <span>Spread USDT Compra (bps)</span>
+          {{ cfg_form.spread_bps_usdt_compra }}
+        </label>
+
+        <label class="text-sm">
+          <span>Spread USDT Venta (bps)</span>
+          {{ cfg_form.spread_bps_usdt_venta }}
+        </label>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-white/10 p-3">
+      <h4 class="font-semibold text-sm mb-2">USD</h4>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="text-sm">
+          <span>Spread USD Compra (bps)</span>
+          {{ cfg_form.spread_bps_usd_compra }}
+        </label>
+
+        <label class="text-sm">
+          <span>Spread USD Venta (bps)</span>
+          {{ cfg_form.spread_bps_usd_venta }}
+        </label>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-white/10 p-3 md:col-span-2">
+      <label class="text-sm">
+        <span>Fee Swap (bps)</span>
+        {{ cfg_form.swap_fee_bps }}
+      </label>
+    </div>
   </div>
+
   <button class="mt-4 rounded-lg bg-primary text-dark font-semibold px-4 py-2">Guardar</button>
   <p class="text-xs mt-2 opacity-70">Última actualización: {{ cfg.updated_at|date:"d/m/Y H:i" }}</p>
 </form>
