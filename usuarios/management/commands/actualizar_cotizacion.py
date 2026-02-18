@@ -25,11 +25,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         cfg = ExchangeConfig.current()
-        self.actualizar_usdt(cfg.spread_bps_usdt)
-        self.actualizar_usd(cfg.spread_bps_usd)
 
+        self.actualizar_usdt(
+            spread_bps_compra=cfg.spread_bps_usdt_compra,
+            spread_bps_venta=cfg.spread_bps_usdt_venta
+        )
+        self.actualizar_usd(
+            spread_bps_compra=cfg.spread_bps_usd_compra,
+            spread_bps_venta=cfg.spread_bps_usd_venta
+        )
     # ---------- USDT (Binance P2P) ----------
-    def actualizar_usdt(self, spread_bps: int):
+    def actualizar_usdt(self, spread_bps_compra: int, spread_bps_venta: int):
         url = 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search'
         payload = {
             "asset": "USDT",
@@ -63,28 +69,32 @@ class Command(BaseCommand):
             # referencia: promedio simple de los top N
             ref = Q6(sum(precios) / len(precios))
 
-            compra = aplicar_spread(ref, spread_bps, 'compra')
-            venta  = aplicar_spread(ref, spread_bps, 'venta')
+            compra = aplicar_spread(ref, spread_bps_compra, 'compra')
+            venta  = aplicar_spread(ref, spread_bps_venta,  'venta')
 
             Cotizacion.objects.create(
                 moneda='USDT',
                 compra=compra,
                 venta=venta,
                 fecha=now(),
-                ref_compra=ref,     # guardamos ref para auditoría/contabilidad
+                ref_compra=ref,
                 ref_venta=ref,
-                margin_bps=spread_bps
+                margin_bps_compra=spread_bps_compra,
+                margin_bps_venta=spread_bps_venta,
+                # si dejás el viejo:
+                margin_bps=(spread_bps_compra + spread_bps_venta)//2,
             )
 
             self.stdout.write(self.style.SUCCESS(
-                f"[USDT] ref={ref} • compra={compra} • venta={venta} • bps={spread_bps}"
+                f"[USDT] ref={ref} • compra={compra} (bps={spread_bps_compra}) • "
+                f"venta={venta} (bps={spread_bps_venta})"
             ))
 
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"[ERROR USDT Binance] {e}"))
 
     # ---------- USD (DolarAPI) ----------
-    def actualizar_usd(self, spread_bps: int):
+    def actualizar_usd(self, spread_bps_compra: int, spread_bps_venta: int):
         url = "https://dolarapi.com/v1/dolares"
         try:
             r = requests.get(url, timeout=10)
@@ -102,8 +112,8 @@ class Command(BaseCommand):
             # referencia: mid-price entre compra y venta oficiales
             ref = Q6((compra_raw + venta_raw) / Decimal('2'))
 
-            compra = aplicar_spread(ref, spread_bps, 'compra')
-            venta  = aplicar_spread(ref, spread_bps, 'venta')
+            compra = aplicar_spread(ref, spread_bps_compra, 'compra')
+            venta  = aplicar_spread(ref, spread_bps_venta,  'venta')
 
             Cotizacion.objects.create(
                 moneda='USD',
@@ -112,12 +122,16 @@ class Command(BaseCommand):
                 fecha=now(),
                 ref_compra=ref,
                 ref_venta=ref,
-                margin_bps=spread_bps
+                margin_bps_compra=spread_bps_compra,
+                margin_bps_venta=spread_bps_venta,
+                margin_bps=(spread_bps_compra + spread_bps_venta)//2,
             )
 
             self.stdout.write(self.style.SUCCESS(
-                f"[USD] ref={ref} • compra={compra} • venta={venta} • bps={spread_bps}"
+                f"[USD] ref={ref} • compra={compra} (bps={spread_bps_compra}) • "
+                f"venta={venta} (bps={spread_bps_venta})"
             ))
+
 
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"[ERROR USD DolarAPI] {e}"))

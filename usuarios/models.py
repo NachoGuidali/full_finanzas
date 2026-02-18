@@ -15,22 +15,35 @@ BPS_MIN, BPS_MAX = 0, 5000  # 0% a 50%
 class ExchangeConfig(models.Model):
     # guardo siempre una sola fila (singleton)
     singleton = models.BooleanField(default=True, editable=False, unique=True)
-
+    spread_bps_usdt = models.PositiveIntegerField( default=getattr(settings, "SPREAD_BPS_USDT", 200), validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)], help_text="Spread aplicado a USDT en bps." ) 
+    spread_bps_usd = models.PositiveIntegerField( default=getattr(settings, "SPREAD_BPS_USD", 200), validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)], help_text="Spread aplicado a USD en bps." )
     # valores en basis points (bps)
     swap_fee_bps      = models.PositiveIntegerField(
         default=getattr(settings, "SWAP_FEE_BPS", 100),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
         help_text="Comisión del swap en basis points (100 bps = 1%)."
     )
-    spread_bps_usdt   = models.PositiveIntegerField(
-        default=getattr(settings, "SPREAD_BPS_USDT", 200),
+        # --- NUEVOS spreads separados ---
+    spread_bps_usdt_compra = models.PositiveIntegerField(
+        default=getattr(settings, "SPREAD_BPS_USDT_COMPRA", getattr(settings, "SPREAD_BPS_USDT", 200)),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
-        help_text="Spread aplicado a USDT en bps."
+        help_text="Spread aplicado a USDT (lado COMPRA) en bps."
     )
-    spread_bps_usd    = models.PositiveIntegerField(
-        default=getattr(settings, "SPREAD_BPS_USD", 200),
+    spread_bps_usdt_venta = models.PositiveIntegerField(
+        default=getattr(settings, "SPREAD_BPS_USDT_VENTA", getattr(settings, "SPREAD_BPS_USDT", 200)),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
-        help_text="Spread aplicado a USD en bps."
+        help_text="Spread aplicado a USDT (lado VENTA) en bps."
+    )
+
+    spread_bps_usd_compra = models.PositiveIntegerField(
+        default=getattr(settings, "SPREAD_BPS_USD_COMPRA", getattr(settings, "SPREAD_BPS_USD", 200)),
+        validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
+        help_text="Spread aplicado a USD (lado COMPRA) en bps."
+    )
+    spread_bps_usd_venta = models.PositiveIntegerField(
+        default=getattr(settings, "SPREAD_BPS_USD_VENTA", getattr(settings, "SPREAD_BPS_USD", 200)),
+        validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
+        help_text="Spread aplicado a USD (lado VENTA) en bps."
     )
 
     updated_at = models.DateTimeField(default=timezone.now)
@@ -38,6 +51,29 @@ class ExchangeConfig(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="+"
     )
+
+    # helpers opcionales
+    @property
+    def spread_usdt_compra_pct(self):
+        from decimal import Decimal
+        return Decimal(self.spread_bps_usdt_compra) / Decimal("10000")
+
+    @property
+    def spread_usdt_venta_pct(self):
+        from decimal import Decimal
+        return Decimal(self.spread_bps_usdt_venta) / Decimal("10000")
+
+    @property
+    def spread_usd_compra_pct(self):
+        from decimal import Decimal
+        return Decimal(self.spread_bps_usd_compra) / Decimal("10000")
+
+    @property
+    def spread_usd_venta_pct(self):
+        from decimal import Decimal
+        return Decimal(self.spread_bps_usd_venta) / Decimal("10000")
+
+    
 
     class Meta:
         verbose_name = "Configuración de Exchange"
@@ -64,18 +100,11 @@ class ExchangeConfig(models.Model):
         from decimal import Decimal
         return Decimal(self.swap_fee_bps) / Decimal("10000")
 
-    @property
-    def spread_usdt_pct(self):
-        from decimal import Decimal
-        return Decimal(self.spread_bps_usdt) / Decimal("10000")
-
-    @property
-    def spread_usd_pct(self):
-        from decimal import Decimal
-        return Decimal(self.spread_bps_usd) / Decimal("10000")
+   
 
     def __str__(self):
         return "Configuración de Exchange"
+
 
 
 # Create your models here.
@@ -331,10 +360,14 @@ class Cotizacion(models.Model):
     ref_venta  = models.DecimalField(max_digits=20, decimal_places=6, null=True, blank=True)
 
     margin_bps = models.IntegerField(null=True, blank=True)
+    # --- NUEVO ---
+    margin_bps_compra = models.IntegerField(null=True, blank=True)
+    margin_bps_venta  = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.moneda} - Compra: {self.compra} / Venta: {self.venta}"
 
+        
 class RetiroARS(models.Model):
     ESTADOS = [
         ('pendiente', 'Pendiente'),

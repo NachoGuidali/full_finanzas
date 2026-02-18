@@ -797,7 +797,6 @@ def procesar_venta(usuario, moneda, monto_moneda, cotizacion_compra, *, return_m
             return True, None, mov_ars, monto_moneda
         return True, None, None, None
 
-
 def procesar_swap(usuario, direccion: str, amount: Decimal, *, rate=Decimal('1.00'), fee_bps=None, return_fee=False):
     from usuarios.services.boletos import emitir_boleto
     fee_bps = Decimal(fee_bps if fee_bps is not None else _cfg().swap_fee_bps)
