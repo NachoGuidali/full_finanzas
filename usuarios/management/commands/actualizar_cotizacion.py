@@ -70,9 +70,9 @@ class Command(BaseCommand):
     def actualizar_usdt(self, spread_bps_compra: int, spread_bps_venta: int):
         try:
             # SELL: gente vende USDT -> precio al que tu cliente COMPRA (tu VENTA)
-            ref_venta = self._binance_p2p_ref("SELL")
+            ref_venta = self._binance_p2p_ref("BUY")
             # BUY: gente compra USDT -> precio al que tu cliente VENDE (tu COMPRA)
-            ref_compra = self._binance_p2p_ref("BUY")
+            ref_compra = self._binance_p2p_ref("SELL")
 
             compra = aplicar_spread(ref_compra, spread_bps_compra, "compra")
             venta = aplicar_spread(ref_venta, spread_bps_venta, "venta")
