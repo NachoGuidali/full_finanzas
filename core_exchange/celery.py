@@ -11,6 +11,6 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "actualizar-cotizaciones-cada-5-min": {
         "task": "usuarios.tasks.actualizar_cotizaciones_task",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/1"),
     },
 }
