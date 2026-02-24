@@ -10,13 +10,13 @@ from django.core.cache import cache
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
-BPS_MIN, BPS_MAX = 0, 5000  # 0% a 50%
+BPS_MIN, BPS_MAX = -5000, 5000  # 0% a 50%
 
 class ExchangeConfig(models.Model):
     # guardo siempre una sola fila (singleton)
     singleton = models.BooleanField(default=True, editable=False, unique=True)
-    spread_bps_usdt = models.PositiveIntegerField( default=getattr(settings, "SPREAD_BPS_USDT", 200), validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)], help_text="Spread aplicado a USDT en bps." ) 
-    spread_bps_usd = models.PositiveIntegerField( default=getattr(settings, "SPREAD_BPS_USD", 200), validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)], help_text="Spread aplicado a USD en bps." )
+    spread_bps_usdt = models.IntegerField( default=getattr(settings, "SPREAD_BPS_USDT", 200), validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)], help_text="Spread aplicado a USDT en bps." ) 
+    spread_bps_usd = models.IntegerField( default=getattr(settings, "SPREAD_BPS_USD", 200), validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)], help_text="Spread aplicado a USD en bps." )
     # valores en basis points (bps)
     swap_fee_bps      = models.PositiveIntegerField(
         default=getattr(settings, "SWAP_FEE_BPS", 100),
