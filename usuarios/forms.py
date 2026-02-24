@@ -19,10 +19,10 @@ class ExchangeConfigForm(forms.ModelForm):
             "swap_fee_bps",
         )
         widgets = {
-            "spread_bps_usdt_compra": forms.NumberInput(attrs={"min": 0, "step": 1}),
-            "spread_bps_usdt_venta":  forms.NumberInput(attrs={"min": 0, "step": 1}),
-            "spread_bps_usd_compra":  forms.NumberInput(attrs={"min": 0, "step": 1}),
-            "spread_bps_usd_venta":   forms.NumberInput(attrs={"min": 0, "step": 1}),
+            "spread_bps_usdt_compra": forms.NumberInput(attrs={"min": -5000, "step": 1}),
+            "spread_bps_usdt_venta":  forms.NumberInput(attrs={"min": -5000, "step": 1}),
+            "spread_bps_usd_compra":  forms.NumberInput(attrs={"min": -5000, "step": 1}),
+            "spread_bps_usd_venta":   forms.NumberInput(attrs={"min": -5000, "step": 1}),
             "swap_fee_bps":           forms.NumberInput(attrs={"min": 0, "step": 1}),
         }
 

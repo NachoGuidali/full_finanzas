@@ -24,23 +24,23 @@ class ExchangeConfig(models.Model):
         help_text="Comisión del swap en basis points (100 bps = 1%)."
     )
         # --- NUEVOS spreads separados ---
-    spread_bps_usdt_compra = models.PositiveIntegerField(
+    spread_bps_usdt_compra = models.IntegerField(
         default=getattr(settings, "SPREAD_BPS_USDT_COMPRA", getattr(settings, "SPREAD_BPS_USDT", 200)),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
         help_text="Spread aplicado a USDT (lado COMPRA) en bps."
     )
-    spread_bps_usdt_venta = models.PositiveIntegerField(
+    spread_bps_usdt_venta = models.IntegerField(
         default=getattr(settings, "SPREAD_BPS_USDT_VENTA", getattr(settings, "SPREAD_BPS_USDT", 200)),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
         help_text="Spread aplicado a USDT (lado VENTA) en bps."
     )
 
-    spread_bps_usd_compra = models.PositiveIntegerField(
+    spread_bps_usd_compra = models.IntegerField(
         default=getattr(settings, "SPREAD_BPS_USD_COMPRA", getattr(settings, "SPREAD_BPS_USD", 200)),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
         help_text="Spread aplicado a USD (lado COMPRA) en bps."
     )
-    spread_bps_usd_venta = models.PositiveIntegerField(
+    spread_bps_usd_venta = models.IntegerField(
         default=getattr(settings, "SPREAD_BPS_USD_VENTA", getattr(settings, "SPREAD_BPS_USD", 200)),
         validators=[MinValueValidator(BPS_MIN), MaxValueValidator(BPS_MAX)],
         help_text="Spread aplicado a USD (lado VENTA) en bps."

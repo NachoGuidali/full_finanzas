@@ -107,9 +107,9 @@ class Command(BaseCommand):
             r.raise_for_status()
             data = r.json()
 
-            oficial = next((d for d in data if d.get("casa") == "oficial"), None)
+            oficial = next((d for d in data if d.get("casa") == "blue"), None)
             if not oficial:
-                self.stdout.write(self.style.WARNING("No se encontró la cotización 'oficial' en dolarapi.com"))
+                self.stdout.write(self.style.WARNING("No se encontró la cotización 'Blue' en dolarapi.com"))
                 return
 
             compra_raw = Decimal(str(oficial["compra"]))
