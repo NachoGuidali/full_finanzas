@@ -299,6 +299,8 @@ def es_admin(user):
     return user.is_superuser or user.is_staff
 
 
+
+
 @login_required
 @user_passes_test(es_admin)
 def panel_admin(request):
@@ -320,16 +322,41 @@ def panel_admin(request):
         depositos_qs = depositos_qs.filter(Q(usuario__username__icontains=q) | Q(usuario__email__icontains=q))
         retiros_qs   = retiros_qs.filter(Q(usuario__username__icontains=q) | Q(usuario__email__icontains=q))
         rcrypto_qs   = rcrypto_qs.filter(Q(usuario__username__icontains=q) | Q(usuario__email__icontains=q))
-        # movs_qs ya viene limitado a 200; si querés filtrar por q:
-        # movs_qs = Movimiento.objects.filter(Q(usuario__username__icontains=q) | ...).order_by('-fecha')[:200]
 
-    # ---------- KPIs (idénticos al criterio de la tabla) ----------
+    # ---------- KPIs ----------
     kpi_pendientes_kyc      = usuarios_qs.filter(estado_verificacion__iexact='pendiente').count()
     kpi_depositos_pend      = depositos_qs.filter(estado__iexact='pendiente').count()
-    kpi_retiros_ars_pend    = retiros_qs.filter(estado__in=['pendiente','aprobado']).count()  # si “aprobado” aún no enviado
+    kpi_retiros_ars_pend    = retiros_qs.filter(estado__in=['pendiente','aprobado']).count()
     kpi_retiros_crypto_pend = rcrypto_qs.filter(estado__iexact='pendiente').count()
 
-    # Listas para las pestañas (podés dejarlas completas y filtrar en el template como ya hacés)
+    # -----------------------------------------------------------------
+    # ✅ NUEVO: refs últimas (para mostrar en panel + preview)
+    # -----------------------------------------------------------------
+    def last_refs(moneda: str):
+        c = Cotizacion.objects.filter(moneda=moneda).order_by("-fecha").first()
+        if not c:
+            return {
+                "ref_compra": None,
+                "ref_venta": None,
+                "compra": None,
+                "venta": None,
+                "fecha": None,
+            }
+        return {
+            "ref_compra": c.ref_compra,
+            "ref_venta": c.ref_venta,
+            "compra": c.compra,
+            "venta": c.venta,
+            "fecha": c.fecha,
+        }
+
+    refs_usdt = last_refs("USDT")
+    refs_usd  = last_refs("USD")
+
+    # Config + form
+    cfg = ExchangeConfig.current()
+    cfg_form = ExchangeConfigForm(instance=cfg)
+
     context = {
         'usuarios': usuarios_qs,
         'depositos': depositos_qs,
@@ -341,11 +368,64 @@ def panel_admin(request):
         'kpi_depositos_pend': kpi_depositos_pend,
         'kpi_retiros_ars_pend': kpi_retiros_ars_pend,
         'kpi_retiros_crypto_pend': kpi_retiros_crypto_pend,
+
+        # ✅ NUEVO
+        "refs_usdt": refs_usdt,
+        "refs_usd": refs_usd,
+
+        "cfg_form": cfg_form,
+        "cfg": cfg,
     }
-    cfg = ExchangeConfig.current()
-    cfg_form = ExchangeConfigForm(instance=cfg)
-    context.update({"cfg_form": cfg_form, "cfg": cfg})
+
     return render(request, 'usuarios/panel_admin.html', context)
+
+# @login_required
+# @user_passes_test(es_admin)
+# def panel_admin(request):
+#     q = (request.GET.get('q') or '').strip()
+
+#     # Base querysets (sin limitar resultados)
+#     usuarios_qs   = Usuario.objects.all()
+#     depositos_qs  = DepositoARS.objects.all()
+#     retiros_qs    = RetiroARS.objects.all()
+#     rcrypto_qs    = RetiroCrypto.objects.all()
+#     movs_qs       = Movimiento.objects.select_related('usuario').order_by('-fecha')[:200]
+
+#     # Si querés que búsqueda también afecte a los KPI y tablas:
+#     if q:
+#         user_filter = (Q(username__icontains=q) |
+#                        Q(email__icontains=q)    |
+#                        Q(doc_nro__icontains=q))
+#         usuarios_qs  = usuarios_qs.filter(user_filter)
+#         depositos_qs = depositos_qs.filter(Q(usuario__username__icontains=q) | Q(usuario__email__icontains=q))
+#         retiros_qs   = retiros_qs.filter(Q(usuario__username__icontains=q) | Q(usuario__email__icontains=q))
+#         rcrypto_qs   = rcrypto_qs.filter(Q(usuario__username__icontains=q) | Q(usuario__email__icontains=q))
+#         # movs_qs ya viene limitado a 200; si querés filtrar por q:
+#         # movs_qs = Movimiento.objects.filter(Q(usuario__username__icontains=q) | ...).order_by('-fecha')[:200]
+
+#     # ---------- KPIs (idénticos al criterio de la tabla) ----------
+#     kpi_pendientes_kyc      = usuarios_qs.filter(estado_verificacion__iexact='pendiente').count()
+#     kpi_depositos_pend      = depositos_qs.filter(estado__iexact='pendiente').count()
+#     kpi_retiros_ars_pend    = retiros_qs.filter(estado__in=['pendiente','aprobado']).count()  # si “aprobado” aún no enviado
+#     kpi_retiros_crypto_pend = rcrypto_qs.filter(estado__iexact='pendiente').count()
+
+#     # Listas para las pestañas (podés dejarlas completas y filtrar en el template como ya hacés)
+#     context = {
+#         'usuarios': usuarios_qs,
+#         'depositos': depositos_qs,
+#         'retiros': retiros_qs,
+#         'retiros_crypto': rcrypto_qs,
+#         'movimientos': movs_qs,
+
+#         'kpi_pendientes_kyc': kpi_pendientes_kyc,
+#         'kpi_depositos_pend': kpi_depositos_pend,
+#         'kpi_retiros_ars_pend': kpi_retiros_ars_pend,
+#         'kpi_retiros_crypto_pend': kpi_retiros_crypto_pend,
+#     }
+#     cfg = ExchangeConfig.current()
+#     cfg_form = ExchangeConfigForm(instance=cfg)
+#     context.update({"cfg_form": cfg_form, "cfg": cfg})
+#     return render(request, 'usuarios/panel_admin.html', context)
 
 @login_required
 @user_passes_test(es_admin)

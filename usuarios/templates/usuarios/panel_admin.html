@@ -7,7 +7,73 @@
 <form action="{% url 'guardar_config_exchange' %}" method="post" class="rounded-xl border p-4 bg-white/5">
   {% csrf_token %}
   <h3 class="font-semibold mb-3">Parámetros del Exchange</h3>
+    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
 
+  <!-- USDT -->
+  <div class="rounded-lg border border-white/10 p-3 bg-white/5">
+    <div class="flex items-center justify-between">
+      <h4 class="font-semibold">USDT — Referencia API</h4>
+      <span class="text-xs opacity-70">
+        {% if refs_usdt.fecha %}{{ refs_usdt.fecha|date:"d/m/Y H:i" }}{% else %}—{% endif %}
+      </span>
+    </div>
+
+    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div>
+        <div class="opacity-70 text-xs">Ref Compra (BUY)</div>
+        <div class="font-semibold" id="usdt-ref-compra">{{ refs_usdt.ref_compra|default:"—" }}</div>
+      </div>
+      <div>
+        <div class="opacity-70 text-xs">Ref Venta (SELL)</div>
+        <div class="font-semibold" id="usdt-ref-venta">{{ refs_usdt.ref_venta|default:"—" }}</div>
+      </div>
+    </div>
+
+    <div class="mt-3 border-t border-white/10 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div>
+        <div class="opacity-70 text-xs">Compra final (con bps)</div>
+        <div class="font-semibold text-neon" id="usdt-final-compra">—</div>
+      </div>
+      <div>
+        <div class="opacity-70 text-xs">Venta final (con bps)</div>
+        <div class="font-semibold text-neon" id="usdt-final-venta">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USD -->
+  <div class="rounded-lg border border-white/10 p-3 bg-white/5">
+    <div class="flex items-center justify-between">
+      <h4 class="font-semibold">USD — Referencia API</h4>
+      <span class="text-xs opacity-70">
+        {% if refs_usd.fecha %}{{ refs_usd.fecha|date:"d/m/Y H:i" }}{% else %}—{% endif %}
+      </span>
+    </div>
+
+    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div>
+        <div class="opacity-70 text-xs">Ref Compra</div>
+        <div class="font-semibold" id="usd-ref-compra">{{ refs_usd.ref_compra|default:"—" }}</div>
+      </div>
+      <div>
+        <div class="opacity-70 text-xs">Ref Venta</div>
+        <div class="font-semibold" id="usd-ref-venta">{{ refs_usd.ref_venta|default:"—" }}</div>
+      </div>
+    </div>
+
+    <div class="mt-3 border-t border-white/10 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div>
+        <div class="opacity-70 text-xs">Compra final (con bps)</div>
+        <div class="font-semibold text-neon" id="usd-final-compra">—</div>
+      </div>
+      <div>
+        <div class="opacity-70 text-xs">Venta final (con bps)</div>
+        <div class="font-semibold text-neon" id="usd-final-venta">—</div>
+      </div>
+    </div>
+  </div>
+
+</div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
     <div class="rounded-lg border border-white/10 p-3">
       <h4 class="font-semibold text-sm mb-2">USDT</h4>
