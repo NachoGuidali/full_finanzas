@@ -488,4 +488,84 @@
   });
 })();
 </script>
+<script>
+(function(){
+  // --- helpers ---
+  const cleanToNumber = (raw) => {
+    if (!raw) return null;
+    // soporta "$ 1.234,56" o "1234.56"
+    let s = String(raw).trim();
+    s = s.replace(/\$/g, '').replace(/\s+/g, '');
+    // si viene tipo "1.234,56" => "1234.56"
+    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(',', '.');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const q2 = (n) => Math.round(n * 100) / 100;
+
+  // misma lógica que aplicar_spread (pero en JS)
+  const aplicarSpread = (precioRef, bps, sentido) => {
+    const factor = (Number(bps) || 0) / 10000;
+    if (sentido === 'compra') return q2(precioRef * (1 - factor));
+    return q2(precioRef * (1 + factor));
+  };
+
+  const fmt = (n) => {
+    if (n === null || n === undefined) return '—';
+    return '$' + n.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  };
+
+  // refs (texto del DOM)
+  const usdtRefCompraEl = document.getElementById('usdt-ref-compra');
+  const usdtRefVentaEl  = document.getElementById('usdt-ref-venta');
+  const usdRefCompraEl  = document.getElementById('usd-ref-compra');
+  const usdRefVentaEl   = document.getElementById('usd-ref-venta');
+
+  // outputs
+  const usdtFinalCompraEl = document.getElementById('usdt-final-compra');
+  const usdtFinalVentaEl  = document.getElementById('usdt-final-venta');
+  const usdFinalCompraEl  = document.getElementById('usd-final-compra');
+  const usdFinalVentaEl   = document.getElementById('usd-final-venta');
+
+  // inputs (IDs típicos de Django forms)
+  const iUsdtCompra = document.getElementById('id_spread_bps_usdt_compra');
+  const iUsdtVenta  = document.getElementById('id_spread_bps_usdt_venta');
+  const iUsdCompra  = document.getElementById('id_spread_bps_usd_compra');
+  const iUsdVenta   = document.getElementById('id_spread_bps_usd_venta');
+
+  function update(){
+    const usdtRefCompra = cleanToNumber(usdtRefCompraEl?.textContent);
+    const usdtRefVenta  = cleanToNumber(usdtRefVentaEl?.textContent);
+    const usdRefCompra  = cleanToNumber(usdRefCompraEl?.textContent);
+    const usdRefVenta   = cleanToNumber(usdRefVentaEl?.textContent);
+
+    const bUsdtCompra = Number(iUsdtCompra?.value || 0);
+    const bUsdtVenta  = Number(iUsdtVenta?.value || 0);
+    const bUsdCompra  = Number(iUsdCompra?.value || 0);
+    const bUsdVenta   = Number(iUsdVenta?.value || 0);
+
+    // USDT
+    usdtFinalCompraEl.textContent =
+      (usdtRefCompra === null) ? '—' : fmt(aplicarSpread(usdtRefCompra, bUsdtCompra, 'compra'));
+    usdtFinalVentaEl.textContent  =
+      (usdtRefVenta === null) ? '—' : fmt(aplicarSpread(usdtRefVenta, bUsdtVenta, 'venta'));
+
+    // USD
+    usdFinalCompraEl.textContent =
+      (usdRefCompra === null) ? '—' : fmt(aplicarSpread(usdRefCompra, bUsdCompra, 'compra'));
+    usdFinalVentaEl.textContent  =
+      (usdRefVenta === null) ? '—' : fmt(aplicarSpread(usdRefVenta, bUsdVenta, 'venta'));
+  }
+
+  [iUsdtCompra,iUsdtVenta,iUsdCompra,iUsdVenta].forEach(el=>{
+    if(!el) return;
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
+  });
+
+  update();
+})();
+</script>
 {% endblock %}
