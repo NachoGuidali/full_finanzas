@@ -468,9 +468,9 @@ def agregar_saldo(request):
         form = DepositoARSForm()
 
     datos_bancarios = {
-        'alias' : 'alias.usuario',
-        'cbu' : '0000003100000001234567',
-        'banco' : 'banco',
+        'alias' : '-',
+        'cbu' : '0140316703719453120278',
+        'banco' : 'Francisco Jose Molina',
     }        
 
     return render(request, 'usuarios/agregar_saldo.html', {

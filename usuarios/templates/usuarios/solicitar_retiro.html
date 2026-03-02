@@ -8,6 +8,22 @@
   <header class="card p-6 mb-6">
     <h1 class="text-2xl sm:text-3xl font-extrabold">Solicitar retiro</h1>
     <p class="text-white/70 mt-1">Elegí el método de retiro y completá los datos requeridos.</p>
+
+    <!-- ✅ Saldos visibles -->
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+      <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+        <div class="text-white/60 text-xs">Saldo ARS</div>
+        <div class="font-semibold">$<span id="saldo-ars">{{ request.user.saldo_ars|default:"0" }}</span></div>
+      </div>
+      <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+        <div class="text-white/60 text-xs">Saldo USDT</div>
+        <div class="font-semibold"><span id="saldo-usdt">{{ request.user.saldo_usdt|default:"0" }}</span></div>
+      </div>
+      <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+        <div class="text-white/60 text-xs">Saldo USD</div>
+        <div class="font-semibold"><span id="saldo-usd">{{ request.user.saldo_usd|default:"0" }}</span></div>
+      </div>
+    </div>
   </header>
 
   <!-- Mensajes de estado -->
@@ -21,14 +37,26 @@
   <div class="grid lg:grid-cols-2 gap-6">
     <!-- Retiro ARS a banco -->
     <div class="card p-6">
-      <h2 class="text-lg font-semibold mb-4">Retiro a banco (ARS)</h2>
-      <form method="POST" class="space-y-4">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-lg font-semibold">Retiro a banco (ARS)</h2>
+          <p class="text-xs text-white/60 mt-1">Disponible: ${{ request.user.saldo_ars|default:"0" }}</p>
+        </div>
+        <button type="button" id="btn-total-ars"
+                class="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5">
+          Total
+        </button>
+      </div>
+
+      <form method="POST" class="space-y-4" id="form-retiro-ars">
         {% csrf_token %}
         <label class="block">
           <span class="text-xs text-white/60 mb-1 block">Monto a retirar (ARS)</span>
-          <input type="number" step="0.01" name="monto" required
+          <input id="input-monto-ars" type="number" step="0.01" name="monto" required
                  class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+          <p id="warn-ars" class="mt-1 text-xs text-rose-300 hidden">El monto supera tu saldo disponible.</p>
         </label>
+
         <div class="grid sm:grid-cols-3 gap-3">
           <label class="block sm:col-span-1">
             <span class="text-xs text-white/60 mb-1 block">Alias</span>
@@ -62,24 +90,39 @@
 
     <!-- Retiro cripto -->
     <div class="card p-6">
-      <h2 class="text-lg font-semibold mb-4">Retiro cripto (USD/USDT)</h2>
-      <form method="POST" action="{% url 'solicitar_retiro_cripto' %}" class="space-y-4">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-lg font-semibold">Retiro cripto (USD/USDT)</h2>
+          <p class="text-xs text-white/60 mt-1">
+            Disponible: <span id="crypto-disponible-label">—</span>
+          </p>
+        </div>
+        <button type="button" id="btn-total-crypto"
+                class="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5">
+          Total
+        </button>
+      </div>
+
+      <form method="POST" action="{% url 'solicitar_retiro_cripto' %}" class="space-y-4" id="form-retiro-crypto">
         {% csrf_token %}
         <div class="grid sm:grid-cols-3 gap-3">
           <label class="block sm:col-span-1">
             <span class="text-xs text-white/60 mb-1 block">Moneda</span>
-            <select name="moneda"
+            <select id="select-crypto-moneda" name="moneda"
                     class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
               <option value="USDT">USDT</option>
               <option value="USD">USD</option>
             </select>
           </label>
+
           <label class="block sm:col-span-2">
             <span class="text-xs text-white/60 mb-1 block">Monto</span>
-            <input type="number" step="0.01" name="monto" required
+            <input id="input-monto-crypto" type="number" step="0.01" name="monto" required
                    class="w-full rounded-md border border-white/10 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon">
+            <p id="warn-crypto" class="mt-1 text-xs text-rose-300 hidden">El monto supera tu saldo disponible.</p>
           </label>
         </div>
+
         <label class="block">
           <span class="text-xs text-white/60 mb-1 block">Dirección de wallet</span>
           <input type="text" name="direccion_wallet" required
@@ -100,4 +143,61 @@
     </div>
   </div>
 </section>
+
+<script>
+(function(){
+  // Saldos desde server
+  const SALDO_ARS  = Number('{{ request.user.saldo_ars|default:"0" }}') || 0;
+  const SALDO_USDT = Number('{{ request.user.saldo_usdt|default:"0" }}') || 0;
+  const SALDO_USD  = Number('{{ request.user.saldo_usd|default:"0" }}') || 0;
+
+  // --- ARS ---
+  const inpARS = document.getElementById('input-monto-ars');
+  const btnARS = document.getElementById('btn-total-ars');
+  const warnARS = document.getElementById('warn-ars');
+
+  function updateARS(){
+    const v = Number(inpARS.value || 0);
+    warnARS.classList.toggle('hidden', !(v > SALDO_ARS));
+  }
+  if(btnARS && inpARS){
+    btnARS.addEventListener('click', () => {
+      inpARS.value = SALDO_ARS.toFixed(2);
+      inpARS.dispatchEvent(new Event('input', {bubbles:true}));
+    });
+    inpARS.addEventListener('input', updateARS);
+    updateARS();
+  }
+
+  // --- CRYPTO ---
+  const selCrypto = document.getElementById('select-crypto-moneda');
+  const inpCrypto = document.getElementById('input-monto-crypto');
+  const btnCrypto = document.getElementById('btn-total-crypto');
+  const warnCrypto = document.getElementById('warn-crypto');
+  const dispLabel = document.getElementById('crypto-disponible-label');
+
+  function saldoCryptoActual(){
+    return (selCrypto.value === 'USD') ? SALDO_USD : SALDO_USDT;
+  }
+  function updateCrypto(){
+    const saldo = saldoCryptoActual();
+    const sym = selCrypto.value;
+    dispLabel.textContent = sym + ': ' + saldo.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    const v = Number(inpCrypto.value || 0);
+    warnCrypto.classList.toggle('hidden', !(v > saldo));
+  }
+
+  if(selCrypto && inpCrypto && btnCrypto){
+    btnCrypto.addEventListener('click', () => {
+      const saldo = saldoCryptoActual();
+      inpCrypto.value = saldo.toFixed(2);
+      inpCrypto.dispatchEvent(new Event('input', {bubbles:true}));
+    });
+    selCrypto.addEventListener('change', updateCrypto);
+    inpCrypto.addEventListener('input', updateCrypto);
+    updateCrypto();
+  }
+})();
+</script>
 {% endblock %}
